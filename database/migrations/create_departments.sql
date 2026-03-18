@@ -1,0 +1,11 @@
+CREATE TABLE departments (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT,
+ name VARCHAR(150) NOT NULL,
+ description TEXT,
+ manager_id BIGINT,
+
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ deleted_at TIMESTAMP NULL,
+
+ FOREIGN KEY(manager_id) REFERENCES users(id)
+);

@@ -1,0 +1,12 @@
+CREATE TABLE notifications (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+ user_id BIGINT,
+ message TEXT,
+
+ is_read BOOLEAN DEFAULT FALSE,
+
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+ FOREIGN KEY(user_id) REFERENCES users(id)
+);

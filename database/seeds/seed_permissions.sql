@@ -1,0 +1,18 @@
+INSERT INTO permissions(module,action) VALUES
+('employee','create'),
+('employee','update'),
+('employee','delete'),
+('employee','view'),
+('department','create'),
+('department','update'),
+('department','delete'),
+('department','view'),
+('leave','apply'),
+('leave','approve'),
+('attendance','mark'),
+('attendance','view'),
+('payroll','generate'),
+('task','create'),
+('task','update'),
+('task','delete'),
+('task','view');
