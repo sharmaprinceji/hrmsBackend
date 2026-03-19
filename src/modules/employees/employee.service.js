@@ -2,68 +2,91 @@ import EmployeeRepository from "./employee.repository.js";
 import pool from "../../config/db.config.js";
 
 class EmployeeService {
-  static async createEmployee(data){
 
-  const connection = await pool.getConnection();
+  static async createEmployee(data) {
 
-  try {
+    const connection = await pool.getConnection();
 
-    await connection.beginTransaction();
+    try {
+      await connection.beginTransaction();
 
-    const existing = await EmployeeRepository.findByUserId(data.userId, connection);
+      if (!data.userId || !data.employeeCode) {
+        throw new Error("userId and employeeCode are required");
+      }
 
-    if(existing){
-      throw new Error("Employee already exists");
+      const existing = await EmployeeRepository.findByUserId(data.userId, connection);
+
+      if (existing) {
+        throw new Error("Employee already exists");
+      }
+
+      const employeeId = await EmployeeRepository.createEmployee(data, connection);
+
+      await EmployeeRepository.initializeLeaveBalances(employeeId, connection);
+
+      await connection.commit();
+
+      return { employeeId };
+
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
     }
-
-    const employeeId = await EmployeeRepository.createEmployee(data, connection);
-
-    await EmployeeRepository.initializeLeaveBalances(employeeId, connection);
-
-    await connection.commit();
-
-    return { employeeId };
-
-  } catch (err) {
-
-    await connection.rollback();
-    throw err;
-
-  } finally {
-    connection.release();
   }
-}
 
-  static async getEmployees(){
-
+  static async getEmployees() {
     return EmployeeRepository.getEmployees();
-
   }
 
-  static async getEmployeeById(id){
+  static async getEmployeeById(id) {
+    const employee = await EmployeeRepository.getEmployeeById(id);
+    if (!employee) {
+      throw new Error("Employee not found");
+    }
+    return employee;
+  }
+
+  static async updateEmployee(id, data, currentUser) {
 
     const employee = await EmployeeRepository.getEmployeeById(id);
 
-    if(!employee){
+    if (!employee) {
       throw new Error("Employee not found");
     }
 
-    return employee;
+    // ✅ SELF UPDATE
+    if (currentUser.userId === employee.user_id) {
+      await EmployeeRepository.updateEmployee(id, data);
+      return { updated: true };
+    }
 
+    // ✅ ROLE CHECK
+    const query = `
+      SELECT id
+      FROM role_manage_rules
+      WHERE manager_role_id=? AND target_role_id=?
+      LIMIT 1
+    `;
+
+    const [rows] = await pool.execute(query, [
+      currentUser.roleId,
+      employee.role_id
+    ]);
+
+    if (rows.length === 0) {
+      throw new Error("You are not allowed to update this employee");
+    }
+
+    await EmployeeRepository.updateEmployee(id, data);
+
+    return { updated: true };
   }
 
-  static async updateEmployee(id,data){
-
-    return EmployeeRepository.updateEmployee(id,data);
-
+  static async deleteEmployee(id) {
+    await EmployeeRepository.deleteEmployee(id);
   }
-
-  static async deleteEmployee(id){
-
-    return EmployeeRepository.deleteEmployee(id);
-
-  }
-
 }
 
 export default EmployeeService;

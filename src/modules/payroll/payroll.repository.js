@@ -100,6 +100,65 @@ static async checkExistingPayroll(employeeId, month, year){
   return rows[0];
 }
 
+static async getEmployee(employeeId){
+
+  const query = `
+    SELECT
+      e.id,
+      e.salary,
+      e.employee_code,
+      u.name,
+      u.email
+    FROM employees e
+    JOIN users u ON e.user_id = u.id
+    WHERE e.id = ? AND e.deleted_at IS NULL
+  `;
+
+  const [rows] = await pool.execute(query, [employeeId]);
+
+  return rows[0];
+}
+
+static async createPayroll(data, conn = pool) {
+
+  const query = `
+    INSERT INTO payroll
+    (
+      employee_id,
+      payroll_month,
+      payroll_year,
+      basic_salary,
+      hra,
+      allowances,
+      pf,
+      esi,
+      tds,
+      gross_salary,
+      deductions,
+      net_salary
+    )
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+  `;
+
+  const values = [
+    data.employeeId,
+    data.month,
+    data.year,
+    data.basic,
+    data.hra,
+    data.allowances,
+    data.pf,
+    data.esi,
+    data.tds,
+    data.gross,
+    data.deductions,
+    data.netSalary
+  ];
+
+  const [result] = await conn.execute(query, values);
+
+  return result.insertId;
+}
 
 }
 
