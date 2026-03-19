@@ -1,4 +1,4 @@
-import swaggerJsdoc from "swagger-jsdoc";
+import swaggerJSDoc from "swagger-jsdoc";
 
 const options = {
   definition: {
@@ -12,11 +12,25 @@ const options = {
       {
         url: "http://localhost:5001/api"
       }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT"
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
     ]
   },
-  apis: ["./modules/**/*.js"]
+   apis: ["./src/modules/**/*.js"], 
 };
 
-const swaggerSpec = swaggerJsdoc(options);
+const swaggerSpec = swaggerJSDoc(options);
 
 export default swaggerSpec;

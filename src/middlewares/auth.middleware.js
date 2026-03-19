@@ -15,7 +15,7 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const token = header.split(" ")[1];
-
+   
     // const isBlacklisted = await redisClient.get(`blacklist:${token}`);
 
     // if (isBlacklisted) {

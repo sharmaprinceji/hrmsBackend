@@ -148,11 +148,11 @@ class AuthService {
 
     await AuthRepository.deleteUserRefreshTokens(userId);
 
-    await redisClient.setEx(
-      `blacklist:${token}`,
-      3600, 
-      "true"
-    );
+    // await redisClient.setEx(
+    //   `blacklist:${token}`,
+    //   3600, 
+    //   "true"
+    // );
 
     // optional: increment token version (invalidate all tokens)
     await pool.execute(

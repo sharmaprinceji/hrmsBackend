@@ -5,6 +5,45 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 
 const userRouter = Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: User Management APIs
+ */
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *         example: 2
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               roleId:
+ *                 type: number
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ */
 userRouter.put(
   "/:id",
   authMiddleware,
@@ -12,6 +51,25 @@ userRouter.put(
   UserController.updateUser
 );
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete user (soft delete)
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *         example: 2
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ */
 userRouter.delete(
   "/:id",
   authMiddleware,
