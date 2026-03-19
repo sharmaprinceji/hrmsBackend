@@ -15,4 +15,8 @@ INSERT INTO permissions(module,action) VALUES
 ('task','create'),
 ('task','update'),
 ('task','delete'),
-('task','view');
+('task','view'),
+('holiday','create'),
+('holiday','update'),
+('holiday','delete'),
+('holiday','view');

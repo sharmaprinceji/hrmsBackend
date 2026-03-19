@@ -1,21 +1,38 @@
 import EmployeeRepository from "./employee.repository.js";
+import pool from "../../config/db.config.js";
 
 class EmployeeService {
-
   static async createEmployee(data){
 
-    const existing = await EmployeeRepository.findByUserId(data.userId);
+  const connection = await pool.getConnection();
+
+  try {
+
+    await connection.beginTransaction();
+
+    const existing = await EmployeeRepository.findByUserId(data.userId, connection);
 
     if(existing){
       throw new Error("Employee already exists");
     }
 
-    const employeeId = await EmployeeRepository.createEmployee(data);
-    await EmployeeRepository.initializeLeaveBalances(employeeId);
+    const employeeId = await EmployeeRepository.createEmployee(data, connection);
 
-    return {employeeId};
+    await EmployeeRepository.initializeLeaveBalances(employeeId, connection);
 
+    await connection.commit();
+
+    return { employeeId };
+
+  } catch (err) {
+
+    await connection.rollback();
+    throw err;
+
+  } finally {
+    connection.release();
   }
+}
 
   static async getEmployees(){
 

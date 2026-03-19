@@ -2,46 +2,42 @@ import pool from "../../config/db.config.js";
 
 class EmployeeRepository {
 
-  static async findByUserId(userId){
+  static async findByUserId(userId, connection) {
 
     const query = `
-      SELECT id
-      FROM employees
-      WHERE user_id=? AND deleted_at IS NULL
-      LIMIT 1
-    `;
+    SELECT id
+    FROM employees
+    WHERE user_id=? AND deleted_at IS NULL
+    LIMIT 1
+  `;
 
-    const [rows] = await pool.execute(query,[userId]);
+    const [rows] = await connection.execute(query, [userId]);
 
     return rows[0];
-
   }
 
-  static async createEmployee(data){
+  static async createEmployee(data, connection) {
 
     const query = `
-      INSERT INTO employees
-      (user_id,employee_code,department_id,designation,phone,address,dob,joining_date,salary)
-      VALUES (?,?,?,?,?,?,?,?,?)
-    `;
+    INSERT INTO employees
+    (user_id, employee_code, department_id, designation, salary)
+    VALUES (?, ?, ?, ?, ?)
+  `;
 
-    const [result] = await pool.execute(query,[
+    const values = [
       data.userId,
       data.employeeCode,
       data.departmentId,
       data.designation,
-      data.phone,
-      data.address,
-      data.dob,
-      data.joiningDate,
       data.salary
-    ]);
+    ];
+
+    const [result] = await connection.execute(query, values);
 
     return result.insertId;
-
   }
 
-  static async getEmployees(){
+  static async getEmployees() {
 
     const query = `
       SELECT
@@ -65,7 +61,7 @@ class EmployeeRepository {
 
   }
 
-  static async getEmployeeById(id){
+  static async getEmployeeById(id) {
 
     const query = `
       SELECT
@@ -79,13 +75,13 @@ class EmployeeRepository {
       WHERE e.id=? AND e.deleted_at IS NULL
     `;
 
-    const [rows] = await pool.execute(query,[id]);
+    const [rows] = await pool.execute(query, [id]);
 
     return rows[0];
 
   }
 
-  static async updateEmployee(id,data){
+  static async updateEmployee(id, data) {
 
     const query = `
       UPDATE employees
@@ -98,7 +94,7 @@ class EmployeeRepository {
       WHERE id=? AND deleted_at IS NULL
     `;
 
-    await pool.execute(query,[
+    await pool.execute(query, [
       data.departmentId,
       data.designation,
       data.phone,
@@ -109,7 +105,7 @@ class EmployeeRepository {
 
   }
 
-  static async deleteEmployee(id){
+  static async deleteEmployee(id) {
 
     const query = `
       UPDATE employees
@@ -117,27 +113,23 @@ class EmployeeRepository {
       WHERE id=?
     `;
 
-    await pool.execute(query,[id]);
+    await pool.execute(query, [id]);
 
   }
 
-  static async initializeLeaveBalances(employeeId){
 
-  const query = `
+
+  static async initializeLeaveBalances(employeeId, connection) {
+
+    const query = `
     INSERT INTO leave_balances
     (employee_id,leave_type_id,total_leaves,used_leaves,remaining_leaves)
-    SELECT
-      ?,
-      id,
-      max_days,
-      0,
-      max_days
+    SELECT ?, id, max_days, 0, max_days
     FROM leave_types
   `;
 
-  await pool.execute(query,[employeeId]);
-
-}
+    await connection.execute(query, [employeeId]);
+  }
 
 }
 

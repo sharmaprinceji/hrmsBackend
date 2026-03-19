@@ -59,7 +59,6 @@ class AttendanceRepository {
   }
 
   static async monthlyReport(month,year){
-
     const query = `
       SELECT
         u.name,

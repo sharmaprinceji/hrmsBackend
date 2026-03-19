@@ -8,9 +8,9 @@ const permissionMiddleware = (module,action)=>{
     const roleId = req.user.roleId;
 
     const cacheKey = `role_permissions:${roleId}`;
-
+    
     let permissions = await redisClient.get(cacheKey);
-
+      console.log("Permissions from cache:", permissions);
     if(!permissions){
 
       const query = `

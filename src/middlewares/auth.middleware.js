@@ -15,7 +15,17 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const token = header.split(" ")[1];
-   // console.log("Received token:", token); // Debug log
+
+    // const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+
+    // if (isBlacklisted) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Token expired or logged out"
+    //   });
+    // }
+
+    // console.log("Received token:", token); // Debug log
     const decoded = verifyRefreshToken(token);
 
     if (!decoded) {

@@ -7,6 +7,10 @@ import "./config/redis.config.js";
 
 import router from "./routes/index.routes.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./config/swagger.js";
+// import { serverAdapter } from "./config/bullBoard.js";
+
 
 const app = express();
 
@@ -19,6 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 app.use("/api", router);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// app.use("/admin/queues", serverAdapter.getRouter());
 
 app.use(errorMiddleware);
 

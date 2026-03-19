@@ -3,6 +3,8 @@ import { hashPassword, comparePassword } from "../../utils/password.utils.js";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../utils/jwt.utils.js";
 import redisClient from "../../config/redis.config.js";
 import pool from "../../config/db.config.js";
+// import { sendOtpEmailJob } from "../../queue/email.producer.js";
+import { sendOTP } from "../../services/emailService.js";
 
 class AuthService {
 
@@ -146,8 +148,81 @@ class AuthService {
 
     await AuthRepository.deleteUserRefreshTokens(userId);
 
-    await redisClient.del(`role_permissions:${userId}`);
+    await redisClient.setEx(
+      `blacklist:${token}`,
+      3600, 
+      "true"
+    );
 
+    // optional: increment token version (invalidate all tokens)
+    await pool.execute(
+      `UPDATE users SET token_version = token_version + 1 WHERE id=?`,
+      [userId]
+    );
+
+  }
+
+  static async forgotPassword(email) {
+
+    const user = await AuthRepository.findUserByEmail(email);
+    // console.log('user--->',user);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // store in Redis (expire in 60 sec)
+    await redisClient.set(
+      `otp:${email}`,
+      otp,
+      "EX",
+      60
+    );
+
+    // TODO: send email...
+    //  await sendOtpEmailJob(email, otp);
+    await sendOTP(email, otp);
+
+
+    // console.log("OTP:", otp);
+
+    return { email };
+
+  }
+
+  static async resetPassword(data) {
+
+    const { email, otp, newPassword } = data;
+    console.log(data);
+
+    const storedOtp = await redisClient.get(`otp:${email}`);
+    console.log("storedtop", storedOtp);
+    if (!storedOtp) {
+      throw new Error("OTP expired or not found");
+    }
+
+    if (storedOtp === otp) {
+      const user = await AuthRepository.findUserByEmail(email);
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+
+      await AuthRepository.updatePassword(user.id, hashedPassword);
+
+      await redisClient.del(`otp:${email}`);
+
+      return { message: "Password updated" };
+
+    }
+    else {
+      throw new Error("Invalid OTP");
+    }
   }
 
 }

@@ -120,6 +120,27 @@ class LeaveRepository {
 
   }
 
+  static async checkOverlap(employeeId, startDate, endDate){
+
+  const query = `
+    SELECT id
+    FROM leave_requests
+    WHERE employee_id = ?
+    AND status IN ('pending','approved')
+    AND (
+      start_date <= ? AND end_date >= ?
+    )
+  `;
+
+  const [rows] = await pool.execute(query, [
+    employeeId,
+    endDate,
+    startDate
+  ]);
+
+  return rows.length > 0;
+}
+
 }
 
 export default LeaveRepository;

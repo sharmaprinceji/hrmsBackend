@@ -3,6 +3,7 @@ import DepartmentController from "./department.controller.js";
 
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import permissionMiddleware from "../../middlewares/permission.middleware.js";
+import { limiter } from "../../utils/rateLimiter.js";
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.post(
 
 router.get(
     "/",
+    limiter,
     authMiddleware,
     permissionMiddleware("department", "view"),
     DepartmentController.getDepartments
@@ -22,6 +24,7 @@ router.get(
 
 router.get(
     "/:id",
+    limiter,
     authMiddleware,
     permissionMiddleware("department", "view"),
     DepartmentController.getDepartmentById
@@ -29,6 +32,7 @@ router.get(
 
 router.put(
     "/:id",
+    limiter,
     authMiddleware,
     permissionMiddleware("department", "update"),
     DepartmentController.updateDepartment

@@ -10,7 +10,7 @@ WHERE module IN ('employee','department','leave','attendance','task','payroll');
 -- HR Admin
 INSERT INTO role_permissions(role_id,permission_id)
 SELECT 3,id FROM permissions
-WHERE module IN ('employee','leave','attendance','task');
+WHERE module IN ('employee','leave','attendance','task','payroll');
 
 -- Manager
 INSERT INTO role_permissions(role_id,permission_id)

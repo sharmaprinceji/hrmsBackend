@@ -14,10 +14,24 @@ payrollRouter.post(
 );
 
 payrollRouter.get(
+  "/view",
+  authMiddleware,
+  permissionMiddleware("payroll","view"),
+  PayrollController.getPayrolls
+);
+
+payrollRouter.get(
   "/employee/:employeeId",
   authMiddleware,
   permissionMiddleware("payroll","generate"),
   PayrollController.getEmployeePayroll
 );
 
+payrollRouter.get(
+  "/payslip/:id",
+  authMiddleware,
+  permissionMiddleware("payroll","view"),
+  PayrollController.downloadPayslip
+);
+// payrollRouter.get("/payslip/:id", authMiddleware,PayrollController.downloadPayslip);
 export default payrollRouter;

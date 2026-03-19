@@ -3,63 +3,78 @@ import pool from "../../config/db.config.js";
 
 class LeaveService {
 
-  static async applyLeave(userId,data){
-    console.log("Applying leave for userId:", userId, "with data:", data);
+  static async applyLeave(userId, data) {
+    // console.log("Applying leave for userId:", userId, "with data:", data);
     const employee = await LeaveRepository.getEmployeeByUserId(userId);
 
-    if(!employee){
+    if (!employee) {
       throw new Error("Employee not found");
     }
 
-    const days =
+    const overlap = await LeaveRepository.checkOverlap(
+      employee.id,
+      data.startDate,
+      data.endDate
+    );
+
+    if (overlap) {
+      throw new Error("Leave dates overlap with existing leave");
+    }
+
+    if (new Date(data.endDate) < new Date(data.startDate)) {
+      throw new Error("End date cannot be before start date");
+    }
+
+    const days = Math.ceil(
       (new Date(data.endDate) - new Date(data.startDate)) /
-      (1000*60*60*24) + 1;
+      (1000 * 60 * 60 * 24)
+    ) + 1;
 
     const balance = await LeaveRepository.getLeaveBalance(
       employee.id,
       data.leaveTypeId
     );
 
-    if(!balance){
+    if (!balance) {
       throw new Error("Leave balance not found");
     }
 
-    if(balance.remaining_leaves < days){
+    if (balance.remaining_leaves < days) {
       throw new Error("Not enough leave balance");
     }
 
     return LeaveRepository.createLeaveRequest({
-      employeeId:employee.id,
-      leaveTypeId:data.leaveTypeId,
-      startDate:data.startDate,
-      endDate:data.endDate,
+      employeeId: employee.id,
+      leaveTypeId: data.leaveTypeId,
+      startDate: data.startDate,
+      endDate: data.endDate,
       days,
-      reason:data.reason
+      reason: data.reason
     });
 
   }
 
-  static async getLeaveRequests(){
+  static async getLeaveRequests() {
 
     return LeaveRepository.getLeaveRequests();
 
   }
 
-  static async approveLeave(leaveId,approverId){
+  static async approveLeave(leaveId, approverId) {
 
     const conn = await pool.getConnection();
 
-    try{
+    try {
 
       await conn.beginTransaction();
 
-      const leave = await LeaveRepository.getLeaveById(leaveId,conn);
+      const leave = await LeaveRepository.getLeaveById(leaveId, conn);
 
-      if(!leave){
+      if (!leave) {
         throw new Error("Leave request not found");
       }
 
-      if(leave.status !== "pending"){
+      if (leave.status !== "pending") {
         throw new Error("Leave already processed");
       }
 
@@ -69,7 +84,7 @@ class LeaveService {
         conn
       );
 
-      if(balance.remaining_leaves < leave.days){
+      if (balance.remaining_leaves < leave.days) {
         throw new Error("Insufficient leave balance");
       }
 
@@ -89,14 +104,14 @@ class LeaveService {
 
       await conn.commit();
 
-      return {approved:true};
+      return { approved: true };
 
-    }catch(err){
+    } catch (err) {
 
       await conn.rollback();
       throw err;
 
-    }finally{
+    } finally {
 
       conn.release();
 
@@ -104,14 +119,23 @@ class LeaveService {
 
   }
 
-  static async rejectLeave(leaveId,approverId){
+  static async rejectLeave(leaveId, approverId) {
+
+    const leave = await LeaveRepository.getLeaveById(leaveId);
+
+    if (!leave) {
+      throw new Error("Leave request not found");
+    }
+
+    if (leave.status !== "pending") {
+      throw new Error("Already processed");
+    }
 
     return LeaveRepository.updateLeaveStatus(
       leaveId,
       "rejected",
       approverId
     );
-
   }
 
 }

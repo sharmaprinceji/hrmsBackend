@@ -149,6 +149,18 @@ class AuthRepository {
 
   }
 
+  static async updatePassword(userId, password) {
+
+  const query = `
+    UPDATE users
+    SET password=?
+    WHERE id=?
+  `;
+
+  await pool.execute(query, [password, userId]);
+
+}
+
 }
 
 export default AuthRepository;

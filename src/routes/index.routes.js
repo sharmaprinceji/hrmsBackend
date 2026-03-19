@@ -6,6 +6,8 @@ import departmentRoutes from "../modules/departments/department.routes.js";
 import leaveRoute from "../modules/leaves/leave.routes.js";
 import attendanceRoute from "../modules/attendance/attendance.routes.js";
 import payrollRouter from "../modules/payroll/payroll.routes.js";
+import holidayRoutes from "../modules/holidays/holiday.routes.js";
+import taskRoutes from "../modules/tasks/task.routes.js";
 
 const router = Router();
 
@@ -23,5 +25,7 @@ router.use("/departments",departmentRoutes);
 router.use("/leaves",leaveRoute);
 router.use("/attendance",attendanceRoute);
 router.use("/payroll",payrollRouter);
+router.use("/holidays",holidayRoutes);
+router.use("/tasks",taskRoutes);
 
 export default router;

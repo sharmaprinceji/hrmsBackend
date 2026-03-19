@@ -1,14 +1,15 @@
 import UserRepository from "./user.repository.js";
-// import AuditLogService from "../auditLogs/auditLog.service.js";
+
 import pool from "../../config/db.config.js";
+import { logAudit } from "../../utils/auditLogger.js";
 
 class UserService {
 
-  static async updateUser(currentUser,targetUserId,data){
+  static async updateUser(currentUser, targetUserId, data) {
 
     const targetUser = await UserRepository.findById(targetUserId);
 
-    if(!targetUser){
+    if (!targetUser) {
       throw new Error("User not found");
     }
 
@@ -20,34 +21,36 @@ class UserService {
       LIMIT 1
     `;
 
-    const [rows] = await pool.execute(query,[
+    const [rows] = await pool.execute(query, [
       currentUser.roleId,
       targetUser.role_id
     ]);
 
-    if(rows.length === 0 && currentUser.userId !== targetUserId){
+    if (rows.length === 0 && currentUser.userId !== targetUserId) {
       throw new Error("You are not allowed to update this user");
     }
 
-    await UserRepository.updateUser(targetUserId,data);
+    await UserRepository.updateUser(targetUserId, data);
 
-    // await AuditLogService.log({
-    //   userId:currentUser.userId,
-    //   action:"UPDATE",
-    //   entityType:"user",
-    //   entityId:targetUserId,
-    //   newData:data
-    // });
+    await logAudit({
+      userId: req.user.userId,
+      action: "update",
+      entityType: "employee",
+      entityId: id,
+      oldData: oldEmployee,
+      newData: data,
+      ip: req.ip
+    });
 
-    return {userId:targetUserId};
+    return { userId: targetUserId };
 
   }
 
-  static async deleteUser(currentUser,targetUserId){
+  static async deleteUser(currentUser, targetUserId) {
 
     const targetUser = await UserRepository.findById(targetUserId);
 
-    if(!targetUser){
+    if (!targetUser) {
       throw new Error("User not found");
     }
 
@@ -58,25 +61,28 @@ class UserService {
       LIMIT 1
     `;
 
-    const [rows] = await pool.execute(query,[
+    const [rows] = await pool.execute(query, [
       currentUser.roleId,
       targetUser.role_id
     ]);
 
-    if(rows.length === 0){
+    if (rows.length === 0) {
       throw new Error("You are not allowed to delete this user");
     }
 
     await UserRepository.softDelete(targetUserId);
 
-    // await AuditLogService.log({
-    //   userId:currentUser.userId,
-    //   action:"DELETE",
-    //   entityType:"user",
-    //   entityId:targetUserId
-    // });
+    await logAudit({
+      userId: req.user.userId,
+      action: "update",
+      entityType: "employee",
+      entityId: id,
+      oldData: oldEmployee,
+      newData: data,
+      ip: req.ip
+    });
 
-    return {userId:targetUserId};
+    return { userId: targetUserId };
 
   }
 

@@ -57,6 +57,25 @@ class AuthController {
     }
   }
 
+  static async forgotPassword(req, res, next) {
+  try {
+    // console.log("body data",req.body);
+    const result = await AuthService.forgotPassword(req.body.email);
+    return successResponse(res, result, "OTP sent successfully");
+  } catch (err) {
+    next(err);
+  }
+}
+
+static async resetPassword(req, res, next) {
+  try {
+    const result = await AuthService.resetPassword(req.body);
+    return successResponse(res, result, "Password reset successful");
+  } catch (err) {
+    next(err);
+  }
+}
+
 }
 
 export default AuthController;
