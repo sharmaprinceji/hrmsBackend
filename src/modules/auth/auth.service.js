@@ -67,42 +67,51 @@ class AuthService {
 
   static async login(data) {
 
-    const user = await AuthRepository.findUserByEmail(data.email);
+  const user = await AuthRepository.findUserByEmail(data.email);
 
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
-
-    const isMatch = await comparePassword(data.password, user.password);
-
-    if (!isMatch) {
-      throw new Error("Invalid credentials");
-    }
-
-    const payload = {
-      userId: user.id,
-      roleId: user.role_id,
-      tokenVersion: user.token_version
-    };
-
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    await AuthRepository.saveRefreshToken(user.id, refreshToken);
-
-    const permissions = await AuthRepository.getRolePermissions(user.role_id);
-
-    await redisClient.set(
-      `role_permissions:${user.role_id}`,
-      JSON.stringify(permissions)
-    );
-
-    return {
-      accessToken,
-      refreshToken
-    };
-
+  if (!user) {
+    throw new Error("Invalid credentials");
   }
+
+  const isMatch = await comparePassword(data.password, user.password);
+
+  if (!isMatch) {
+    throw new Error("Invalid credentials");
+  }
+
+  const payload = {
+    userId: user.id,
+    roleId: user.role_id,
+    tokenVersion: user.token_version
+  };
+
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  await AuthRepository.saveRefreshToken(user.id, refreshToken);
+
+  // ✅ Fetch permissions
+  const permissions = await AuthRepository.getRolePermissions(user.role_id);
+
+  // ✅ Cache in Redis
+  await redisClient.set(
+    `role_permissions:${user.role_id}`,
+    JSON.stringify(permissions)
+  );
+
+  // ✅ FINAL RESPONSE (IMPORTANT 🔥)
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roleId: user.role_id,
+      permissions // 🔥 THIS FIXES YOUR FRONTEND
+    }
+  };
+}
 
   static async refreshToken(refreshToken) {
 

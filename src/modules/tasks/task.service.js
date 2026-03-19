@@ -28,9 +28,9 @@ class TaskService {
   }
 
  static async updateTask(id,data){
-
+ console.log("data==>",id,data);
   const task = await TaskRepository.getTaskById(id);
-
+console.log("task",task);
   if(!task){
      throw new Error("Task not found");
   }

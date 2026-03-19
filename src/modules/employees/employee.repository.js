@@ -13,6 +13,14 @@ class EmployeeRepository {
     return rows[0];
   }
 
+  static async checkDepartmentExists(departmentId, connection) {
+  const [rows] = await connection.execute(
+    `SELECT id FROM departments WHERE id = ?`,
+    [departmentId]
+  );
+  return rows[0];
+}
+
   static async createEmployee(data, connection) {
     const query = `
       INSERT INTO employees

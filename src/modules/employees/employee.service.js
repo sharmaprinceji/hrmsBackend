@@ -4,7 +4,6 @@ import pool from "../../config/db.config.js";
 class EmployeeService {
 
   static async createEmployee(data) {
-
     const connection = await pool.getConnection();
 
     try {
@@ -14,10 +13,23 @@ class EmployeeService {
         throw new Error("userId and employeeCode are required");
       }
 
+      data.userId = Number(data.userId);
+      data.departmentId = Number(data.departmentId);
+      data.salary = Number(data.salary);
+      // console.log("data-->",data);
       const existing = await EmployeeRepository.findByUserId(data.userId, connection);
 
       if (existing) {
         throw new Error("Employee already exists");
+      }
+
+      const department = await EmployeeRepository.checkDepartmentExists(
+        data.departmentId,
+        connection
+      );
+
+      if (!department) {
+        throw new Error("Department does not exist");
       }
 
       const employeeId = await EmployeeRepository.createEmployee(data, connection);
