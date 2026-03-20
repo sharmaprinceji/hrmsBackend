@@ -1,30 +1,45 @@
-import { createClient } from "redis";
+// import { createClient } from "redis";
+// import logger from "./logger.config.js";
+
+// // const redisClient = createClient({
+// //     url: process.env.REDIS_URL,
+// // })
+
+// // const redisClient = createClient({
+// //     url: process.env.REDIS_URL,
+// //     maxRetriesPerRequest:null,
+// // });
+
+// redisClient.on("connect", () => {
+//     logger.info("Redis connected");
+// });
+
+// redisClient.on("error", (err) => {
+//     logger.error("Redis error", err);
+// });
+
+// await redisClient.connect();
+
+// export default redisClient;
+
+import { Redis } from "@upstash/redis";
 import logger from "./logger.config.js";
 
-const redisClient = createClient({
-    url: process.env.REDIS_URL,
-})
+let redisClient = null;
 
-// const redisClient = createClient({
-//     url: process.env.REDIS_URL,
-//     maxRetriesPerRequest:null,
-// });
+if (process.env.REDIS_URL && process.env.REDIS_TOKEN) {
+  try {
+    redisClient = new Redis({
+      url: process.env.REDIS_URL,
+      token: process.env.REDIS_TOKEN,
+    });
 
-// const redisClient = createClient({
-//     socket: {
-//         host: process.env.REDIS_HOST || "redis",  // docker service name
-//         port: process.env.REDIS_PORT || 6379
-//     }
-// });
-
-redisClient.on("connect", () => {
-    logger.info("Redis connected");
-});
-
-redisClient.on("error", (err) => {
-    logger.error("Redis error", err);
-});
-
-await redisClient.connect();
+    logger.info("Upstash Redis initialized");
+  } catch (error) {
+    logger.error("Redis init failed", error);
+  }
+} else {
+  logger.warn("Redis not configured (missing env)");
+}
 
 export default redisClient;

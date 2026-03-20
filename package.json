@@ -17,6 +17,7 @@
   "dependencies": {
     "@bull-board/api": "^5.10.0",
     "@bull-board/express": "^5.10.0",
+    "@upstash/redis": "^1.37.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.71.0",
     "cloudinary": "^2.9.0",
