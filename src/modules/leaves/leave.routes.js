@@ -123,6 +123,52 @@ leaveRoute.put(
   LeaveController.rejectLeave
 );
 
+/**
+ * @swagger
+ * /leaves/all:
+ *   get:
+ *     summary: Get all employee leave requests (HR/Admin)
+ *     tags: [Leave]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all leave requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: number
+ *                         example: 1
+ *                       employee_name:
+ *                         type: string
+ *                         example: Rohit
+ *                       leave_type:
+ *                         type: string
+ *                         example: Sick Leave
+ *                       start_date:
+ *                         type: string
+ *                         example: 2026-03-20
+ *                       end_date:
+ *                         type: string
+ *                         example: 2026-03-22
+ *                       days:
+ *                         type: number
+ *                         example: 3
+ *                       status:
+ *                         type: string
+ *                         example: pending
+ */
 leaveRoute.get(
   "/all",
   authMiddleware,
@@ -130,6 +176,50 @@ leaveRoute.get(
   LeaveController.getAllLeaves
 );
 
+
+/**
+ * @swagger
+ * /leaves/my:
+ *   get:
+ *     summary: Get logged-in user's leave requests
+ *     tags: [Leave]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's leave requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: number
+ *                         example: 1
+ *                       leave_type:
+ *                         type: string
+ *                         example: Casual Leave
+ *                       start_date:
+ *                         type: string
+ *                         example: 2026-03-20
+ *                       end_date:
+ *                         type: string
+ *                         example: 2026-03-21
+ *                       days:
+ *                         type: number
+ *                         example: 2
+ *                       status:
+ *                         type: string
+ *                         example: approved
+ */
 leaveRoute.get(
   "/my",
   authMiddleware,
