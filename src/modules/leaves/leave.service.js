@@ -60,6 +60,14 @@ class LeaveService {
 
   }
 
+  static async getAllLeaves () {
+    return LeaveRepository.getLeaveBalancesAll();
+  }
+
+  static async getLeaveBalance(){
+    return LeaveRepository.getLeaveBalance();
+  }
+
   static async approveLeave(leaveId, approverId) {
 
     const conn = await pool.getConnection();

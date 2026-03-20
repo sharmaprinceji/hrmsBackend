@@ -31,6 +31,34 @@ class LeaveController {
 
   }
 
+  static async getAllLeaves(req,res,next){
+
+    try{
+
+      const leaves = await LeaveService. getAllLeaves();
+
+      return successResponse(res,leaves);
+
+    }catch(err){
+      next(err);
+    }
+  }
+
+  static async getMyLeaves(req,res,next){
+
+    try{
+
+      const leaves = await LeaveService. getLeaveBalance();
+
+      return successResponse(res,leaves);
+
+    }catch(err){
+      next(err);
+    }
+
+  }
+  
+
   static async approveLeave(req,res,next){
 
     try{

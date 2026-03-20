@@ -30,6 +30,27 @@ class LeaveRepository {
 
   }
 
+  static async getLeaveBalancesAll() {
+  const query = `
+    SELECT
+      lb.id,
+      u.name AS employee_name,
+      lt.name AS leave_type,
+      lb.total_leaves,
+      lb.used_leaves,
+      lb.remaining_leaves
+    FROM leave_balances lb
+    JOIN employees e ON lb.employee_id = e.id
+    JOIN users u ON e.user_id = u.id
+    JOIN leave_types lt ON lb.leave_type_id = lt.id
+    ORDER BY u.name ASC
+  `;
+
+  const [rows] = await pool.execute(query);
+
+  return rows;
+}
+
   static async createLeaveRequest(data){
 
     const query = `

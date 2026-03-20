@@ -123,4 +123,17 @@ leaveRoute.put(
   LeaveController.rejectLeave
 );
 
+leaveRoute.get(
+  "/all",
+  authMiddleware,
+  permissionMiddleware("leave","view"),
+  LeaveController.getAllLeaves
+);
+
+leaveRoute.get(
+  "/my",
+  authMiddleware,
+  LeaveController.getMyLeaves
+);
+
 export default leaveRoute;
