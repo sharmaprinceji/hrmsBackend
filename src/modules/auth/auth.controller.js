@@ -59,7 +59,7 @@ class AuthController {
 
   static async forgotPassword(req, res, next) {
   try {
-    // console.log("body data",req.body);
+    //  console.log("body data",req.body);
     const result = await AuthService.forgotPassword(req.body.email);
     return successResponse(res, result, "OTP sent successfully");
   } catch (err) {

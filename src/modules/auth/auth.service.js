@@ -67,51 +67,51 @@ class AuthService {
 
   static async login(data) {
 
-  const user = await AuthRepository.findUserByEmail(data.email);
+    const user = await AuthRepository.findUserByEmail(data.email);
 
-  if (!user) {
-    throw new Error("Invalid credentials");
-  }
-
-  const isMatch = await comparePassword(data.password, user.password);
-
-  if (!isMatch) {
-    throw new Error("Invalid credentials");
-  }
-
-  const payload = {
-    userId: user.id,
-    roleId: user.role_id,
-    tokenVersion: user.token_version
-  };
-
-  const accessToken = generateAccessToken(payload);
-  const refreshToken = generateRefreshToken(payload);
-
-  await AuthRepository.saveRefreshToken(user.id, refreshToken);
-
-  // ✅ Fetch permissions
-  const permissions = await AuthRepository.getRolePermissions(user.role_id);
-
-  // ✅ Cache in Redis
-  await redisClient.set(
-    `role_permissions:${user.role_id}`,
-    JSON.stringify(permissions)
-  );
-
-  // ✅ FINAL RESPONSE (IMPORTANT 🔥)
-  return {
-    accessToken,
-    refreshToken,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      roleId: user.role_id,
-      permissions // 🔥 THIS FIXES YOUR FRONTEND
+    if (!user) {
+      throw new Error("Invalid credentials");
     }
-  };
-}
+
+    const isMatch = await comparePassword(data.password, user.password);
+
+    if (!isMatch) {
+      throw new Error("Invalid credentials");
+    }
+
+    const payload = {
+      userId: user.id,
+      roleId: user.role_id,
+      tokenVersion: user.token_version
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    await AuthRepository.saveRefreshToken(user.id, refreshToken);
+
+    // ✅ Fetch permissions
+    const permissions = await AuthRepository.getRolePermissions(user.role_id);
+
+    // ✅ Cache in Redis
+    await redisClient.set(
+      `role_permissions:${user.role_id}`,
+      JSON.stringify(permissions)
+    );
+
+    // ✅ FINAL RESPONSE (IMPORTANT 🔥)
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        roleId: user.role_id,
+        permissions // 🔥 THIS FIXES YOUR FRONTEND
+      }
+    };
+  }
 
   static async refreshToken(refreshToken) {
 
@@ -184,12 +184,16 @@ class AuthService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // store in Redis (expire in 60 sec)
-    await redisClient.set(
-      `otp:${email}`,
-      otp,
-      "EX",
-      60
-    );
+    // await redisClient.set(
+    //   `otp:${email}`,
+    //   otp,
+    //   "EX",
+    //   60
+    // );
+    await redisClient.set(`otp:${email}`, otp, {
+      ex: 60,
+    });
+
 
     // TODO: send email...
     //  await sendOtpEmailJob(email, otp);
@@ -205,15 +209,15 @@ class AuthService {
   static async resetPassword(data) {
 
     const { email, otp, newPassword } = data;
-    console.log(data);
 
     const storedOtp = await redisClient.get(`otp:${email}`);
-    console.log("storedtop", storedOtp);
+    
     if (!storedOtp) {
       throw new Error("OTP expired or not found");
     }
-
-    if (storedOtp === otp) {
+    // console.log("data---->",storedOtp,otp);
+    
+    if (storedOtp == otp) {
       const user = await AuthRepository.findUserByEmail(email);
 
       if (!user) {
