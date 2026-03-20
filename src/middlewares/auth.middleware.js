@@ -15,7 +15,7 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const token = header.split(" ")[1];
-   
+  //  console.log("token",token);
     // const isBlacklisted = await redisClient.get(`blacklist:${token}`);
 
     // if (isBlacklisted) {
@@ -27,7 +27,7 @@ const authMiddleware = async (req, res, next) => {
 
     // console.log("Received token:", token); // Debug log
     const decoded = verifyRefreshToken(token);
-
+    // console.log("decode",decoded);
     if (!decoded) {
       return res.status(401).json({
         success: false,
@@ -72,7 +72,7 @@ const authMiddleware = async (req, res, next) => {
       userId: decoded.userId,
       roleId: decoded.roleId
     };
-
+     console.log('auth middileware done !');
     next();
 
   } catch (error) {

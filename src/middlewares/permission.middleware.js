@@ -1,53 +1,125 @@
+// import redisClient from "../config/redis.config.js";
+// import pool from "../config/db.config.js";
+
+// const permissionMiddleware = (module,action)=>{
+
+//   return async (req,res,next)=>{
+
+//     const roleId = req.user.roleId;
+
+//     const cacheKey = `role_permissions:${roleId}`;
+    
+//     let permissions = await redisClient.get(cacheKey);
+//        console.log("Permissions from cache:", permissions);
+//     if(!permissions){
+
+//       const query = `
+//         SELECT p.module,p.action
+//         FROM permissions p
+//         JOIN role_permissions rp
+//         ON rp.permission_id=p.id
+//         WHERE rp.role_id=?
+//       `;
+
+//       const [rows] = await pool.execute(query,[roleId]);
+
+//       permissions = rows;
+
+//       //await redisClient.set(cacheKey,JSON.stringify(rows));
+
+     
+
+//     }else{
+
+//       //permissions = JSON.parse(permissions);
+
+//     }
+
+//     const allowed = permissions.find(
+//       p => p.module === module && p.action === action
+//     );
+
+//     if(!allowed){
+//       return res.status(403).json({
+//         success:false,
+//         message:`You are not allowed to ${action} ${module}`
+//       });
+//     }
+
+//     console.log('permissions done=====>');
+
+//     next();
+
+//   };
+
+// };
+
+// export default permissionMiddleware;
+
+
 import redisClient from "../config/redis.config.js";
 import pool from "../config/db.config.js";
 
-const permissionMiddleware = (module,action)=>{
+const permissionMiddleware = (module, action) => {
+  return async (req, res, next) => {
+    try {
+      const roleId = req.user.roleId;
+      const cacheKey = `role_permissions:${roleId}`;
 
-  return async (req,res,next)=>{
+      let permissions = null;
 
-    const roleId = req.user.roleId;
+      // ✅ 1. Try cache
+      if (redisClient) {
+        permissions = await redisClient.get(cacheKey);
+        console.log("Permissions from cache:", permissions);
+      }
 
-    const cacheKey = `role_permissions:${roleId}`;
-    
-    let permissions = await redisClient.get(cacheKey);
-      // console.log("Permissions from cache:", permissions);
-    if(!permissions){
+      // ✅ 2. If not in cache → fetch from DB
+      if (!permissions) {
+        const query = `
+          SELECT p.module, p.action
+          FROM permissions p
+          JOIN role_permissions rp
+          ON rp.permission_id = p.id
+          WHERE rp.role_id = ?
+        `;
 
-      const query = `
-        SELECT p.module,p.action
-        FROM permissions p
-        JOIN role_permissions rp
-        ON rp.permission_id=p.id
-        WHERE rp.role_id=?
-      `;
+        const [rows] = await pool.execute(query, [roleId]);
 
-      const [rows] = await pool.execute(query,[roleId]);
+        permissions = rows;
 
-      permissions = rows;
+        // ✅ 3. Store directly (NO stringify)
+        if (redisClient) {
+          await redisClient.set(cacheKey, permissions, {
+            ex: 300, // 5 min cache
+          });
+        }
+      }
 
-      await redisClient.set(cacheKey,JSON.stringify(rows));
+      // ✅ 4. Check permission
+      const allowed = permissions.find(
+        (p) => p.module === module && p.action === action
+      );
 
-    }else{
+      if (!allowed) {
+        return res.status(403).json({
+          success: false,
+          message: `You are not allowed to ${action} ${module}`,
+        });
+      }
 
-      permissions = JSON.parse(permissions);
+      console.log("permissions done=====>");
 
-    }
+      next();
 
-    const allowed = permissions.find(
-      p => p.module === module && p.action === action
-    );
-
-    if(!allowed){
-      return res.status(403).json({
-        success:false,
-        message:`You are not allowed to ${action} ${module}`
+    } catch (error) {
+      console.error("Permission middleware error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
       });
     }
-
-    next();
-
   };
-
 };
 
 export default permissionMiddleware;

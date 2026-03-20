@@ -83,7 +83,7 @@ class UserService {
 }
 
 static async getUsers(currentUser) {
-
+    console.log("currentUser",currentUser);
   // ✅ Employee → only self
   if (currentUser.role === "employee") {
     return [await UserRepository.findById(currentUser.userId)];

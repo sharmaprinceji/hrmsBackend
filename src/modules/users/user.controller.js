@@ -46,7 +46,7 @@ class UserController {
 
   static async getUsers(req, res, next) {
   try {
-
+    console.log("message",req.user);
     const users = await UserService.getUsers(req.user);
 
     return successResponse(res, users, "Users fetched successfully");
