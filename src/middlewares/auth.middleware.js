@@ -72,7 +72,7 @@ const authMiddleware = async (req, res, next) => {
       userId: decoded.userId,
       roleId: decoded.roleId
     };
-     console.log('auth middileware done !');
+    //  console.log('auth middileware done !');
     next();
 
   } catch (error) {
