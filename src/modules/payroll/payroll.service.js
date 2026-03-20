@@ -2,8 +2,8 @@ import pool from "../../config/db.config.js";
 import redisClient from "../../config/redis.config.js";
 import { payslipTemplate } from "../../utils/paySlipTemplates.js";
 import PayrollRepository from "./payroll.repository.js";
-// import puppeteer from "puppeteer";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
+//  import puppeteer from "puppeteer-core";
 
 
 
@@ -94,51 +94,82 @@ class PayrollService {
 
   }
 
+  // static async downloadPayslip(payrollId) {
+  //   // const cacheKey = `payslip:${payrollId}`;
+  //   // const cached = await redisClient.get(cacheKey);
+
+  //   // if (cached) {
+  //   //   return Buffer.from(cached, "base64");
+  //   // }
+
+  //   const payroll = await PayrollRepository.getEmployeePayroll(payrollId);
+
+  //   if (!payroll) {
+  //     throw new Error("Payroll not found");
+  //   }
+
+  //   // const browser = await puppeteer.launch({
+  //   //   args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  //   // });
+
+  //   const browser = await puppeteer.launch({
+  //     executablePath: "/usr/bin/google-chrome",
+  //     args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  //   });
+
+  //   const page = await browser.newPage();
+  //   const html = payslipTemplate(payroll);
+
+  //   await page.setContent(html);
+
+  //   const pdf = await page.pdf({
+  //     format: "A4",
+  //     printBackground: true
+  //   });
+
+  //   //set response inside the redis.
+  //   // await redisClient.setEx(
+  //   //   cacheKey,
+  //   //   3600,
+  //   //   pdf.toString("base64")
+  //   // );
+
+  //   await browser.close();
+
+  //   return pdf;
+
+  // }
+
   static async downloadPayslip(payrollId) {
-    // const cacheKey = `payslip:${payrollId}`;
-    // const cached = await redisClient.get(cacheKey);
 
-    // if (cached) {
-    //   return Buffer.from(cached, "base64");
-    // }
+  const payroll = await PayrollRepository.getEmployeePayroll(payrollId);
 
-    const payroll = await PayrollRepository.getEmployeePayroll(payrollId);
-
-    if (!payroll) {
-      throw new Error("Payroll not found");
-    }
-
-    // const browser = await puppeteer.launch({
-    //   args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    // });
-
-    const browser = await puppeteer.launch({
-      executablePath: "/usr/bin/google-chrome",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-
-    const page = await browser.newPage();
-    const html = payslipTemplate(payroll);
-
-    await page.setContent(html);
-
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true
-    });
-
-    //set response inside the redis.
-    // await redisClient.setEx(
-    //   cacheKey,
-    //   3600,
-    //   pdf.toString("base64")
-    // );
-
-    await browser.close();
-
-    return pdf;
-
+  if (!payroll) {
+    throw new Error("Payroll not found");
   }
+
+  // ✅ FIXED (NO executablePath)
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
+
+  const page = await browser.newPage();
+  const html = payslipTemplate(payroll);
+
+  await page.setContent(html, {
+    waitUntil: "networkidle0"
+  });
+
+  const pdf = await page.pdf({
+    format: "A4",
+    printBackground: true
+  });
+
+  await browser.close();
+
+  return pdf;
+}
 
 }
 
