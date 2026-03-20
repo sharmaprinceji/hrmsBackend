@@ -56,7 +56,7 @@ class PayrollRepository {
 
   }
 
-  static async getPayrollById(id){
+  static async getEmployeePayroll(id){
 
   const query = `
     SELECT

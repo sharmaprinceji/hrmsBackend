@@ -93,7 +93,7 @@ payrollRouter.get(
 payrollRouter.get(
   "/employee/:employeeId",
   authMiddleware,
-  permissionMiddleware("payroll","view"), // ✅ FIXED (was generate ❌)
+  permissionMiddleware("payroll","view"), 
   PayrollController.getEmployeePayroll
 );
 

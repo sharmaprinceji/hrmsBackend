@@ -102,7 +102,7 @@ class PayrollService {
     //   return Buffer.from(cached, "base64");
     // }
 
-    const payroll = await PayrollRepository.getPayrollById(payrollId);
+    const payroll = await PayrollRepository.getEmployeePayroll(payrollId);
 
     if (!payroll) {
       throw new Error("Payroll not found");
