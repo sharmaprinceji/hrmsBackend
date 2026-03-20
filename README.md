@@ -1,37 +1,37 @@
-# 🚀 HRMS Backend (Node.js + MySQL + Docker)
+# 🎯 HRMS Frontend (React.js)
 
-A complete **HR Management System (HRMS)** backend with:
+A modern **HR Management System Frontend** built with:
 
-* 🔐 Authentication (JWT + Refresh Token)
-* 🧑‍💼 Employee Management
-* 🏢 Department Management
-* 📅 Attendance System
-* 📝 Leave Management
-* 💰 Payroll + Payslip (PDF using Puppeteer)
-* 📋 Task Management (Kanban Board)
-* 🔑 RBAC (Role-Based Access Control)
+* ⚛️ React.js
+* 🔐 JWT Authentication + Refresh Token
+* 🔑 Role-Based Access Control (RBAC)
+* 📊 Dashboard (Employees, Payroll, Attendance, Tasks)
+* 📦 Axios API Integration
+* 🎨 Custom CSS UI
 
 ---
 
 # 🏗️ Tech Stack
 
-* Node.js + Express
-* MySQL
-* Redis (optional for caching)
-* Puppeteer (PDF generation)
-* Docker + Docker Compose
-* Swagger (API Docs)
+* React.js
+* React Router DOM
+* Axios
+* Context API (Auth)
+* CSS (Custom)
+* Drag & Drop (`@hello-pangea/dnd`)
 
 ---
 
-# 📦 Project Setup (Without Docker)
+# 📦 Setup Instructions
 
-## 1️⃣ Clone Repo
+## 1️⃣ Clone Repository
 
 ```bash
-git clone <your-repo-url>
-cd hrms-backend
+git clone <your-frontend-repo>
+cd hrms-frontend
 ```
+
+---
 
 ## 2️⃣ Install Dependencies
 
@@ -39,190 +39,171 @@ cd hrms-backend
 npm install
 ```
 
-## 3️⃣ Setup Environment
+---
 
-Create `.env` file:
+## 3️⃣ Environment Setup
+
+Create `.env` file in root:
 
 ```env
-PORT=5001
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_NAME=hrms_db
-
-JWT_SECRET=your_secret
-REFRESH_TOKEN_SECRET=your_refresh_secret
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
+VITE_API_URL=http://localhost:5001/api
 ```
 
-## 4️⃣ Run Database
+---
 
-Import SQL schema (you already created tables)
-
-```bash
-mysql -u root -p hrms_db < schema.sql
-```
-
-## 5️⃣ Run Server
+## 4️⃣ Run Application
 
 ```bash
 npm run dev
 ```
 
----
-
-# 🐳 Docker Setup (RECOMMENDED)
-
-## 📁 Create `docker-compose.yml`
-
-```yaml
-version: "3.8"
-
-services:
-  app:
-    build: .
-    container_name: hrms_app
-    ports:
-      - "5001:5001"
-    depends_on:
-      - mysql
-      - redis
-    environment:
-      - DB_HOST=mysql
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - DB_NAME=hrms_db
-      - JWT_SECRET=secret
-      - REFRESH_TOKEN_SECRET=refreshsecret
-    volumes:
-      - .:/app
-    command: npm run dev
-
-  mysql:
-    image: mysql:8
-    container_name: hrms_mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: hrms_db
-    ports:
-      - "3307:3306"
-
-  redis:
-    image: redis:alpine
-    container_name: hrms_redis
-    ports:
-      - "6379:6379"
-```
-
----
-
-## 📁 Create `Dockerfile`
-
-```Dockerfile
-FROM node:18
-
-WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm install
-
-COPY . .
-
-EXPOSE 5001
-
-CMD ["npm", "run", "dev"]
-```
-
----
-
-## ▶️ Run Project (Docker)
+App will run at:
 
 ```bash
-docker-compose up --build
-```
-
-Stop:
-
-```bash
-docker-compose down
-```
-
----
-
-# ⚠️ Puppeteer Fix (IMPORTANT)
-
-If using Docker/Linux, install dependencies:
-
-```bash
-apt-get update && apt-get install -y \
-  libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 \
-  libcups2 libxcomposite1 libxdamage1 libxrandr2 \
-  libgbm1 libasound2 libpangocairo-1.0-0 \
-  libx11-xcb1 libxshmfence1 libglu1-mesa
+http://localhost:5173
 ```
 
 ---
 
 # 🔐 Authentication Flow
 
-1. User Login → returns:
+### Login API
 
-   * accessToken
-   * refreshToken
+```http
+POST /auth/login
+```
 
-2. Frontend stores:
+### Response
 
-   * accessToken (localStorage)
-   * refreshToken (httpOnly cookie or storage)
-
-3. When accessToken expires:
-
-   * Call `/auth/refresh`
-   * Get new accessToken
-
----
-
-# 🧑‍💼 Employee Flow
-
-1. Register User
-2. Create Employee (link with user_id)
-3. Assign Department
-4. Set Salary
+```json
+{
+  "accessToken": "token",
+  "user": {
+    "id": 1,
+    "roleId": 3
+  }
+}
+```
 
 ---
 
-# 💰 Payroll Flow (IMPORTANT)
+### Frontend Handling
 
-### Steps:
+```js
+localStorage.setItem("accessToken", token);
+localStorage.setItem("user", JSON.stringify(user));
+```
 
-1. Ensure employee has salary
-2. Generate payroll:
+---
+
+### Axios Setup
+
+```js
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+---
+
+### Refresh Token Flow
+
+* If accessToken expires:
+
+```http
+POST /auth/refresh
+```
+
+* Get new token → continue without logout
+
+---
+
+# 🔑 RBAC (Role-Based Access Control)
+
+| Role     | ID |
+| -------- | -- |
+| Admin    | 1  |
+| HR       | 3  |
+| Manager  | 4  |
+| Employee | 5  |
+
+---
+
+### Example
+
+```js
+hasPermission(user, "employee", "create")
+```
+
+---
+
+### Protected Route
+
+```jsx
+<ProtectedRoute module="employee" action="view">
+  <EmployeeList />
+</ProtectedRoute>
+```
+
+---
+
+# 📊 Features / Modules
+
+---
+
+## 🧑‍💼 Employees
+
+* View employees
+* Create / Update / Delete
+* Role-based actions
+
+---
+
+## 🏢 Departments
+
+* Create / Update / Delete
+* Only Admin / HR access
+
+---
+
+## 📅 Attendance
+
+### Employee:
+
+* Check In
+* Check Out
+
+### HR / Manager:
+
+* Mark attendance (present/absent)
+
+### Monthly Report:
+
+```http
+GET /attendance?month=3&year=2026
+```
+
+---
+
+## 💰 Payroll
+
+### Generate Payroll (HR/Admin)
 
 ```http
 POST /payroll/generate
 ```
 
-```json
-{
-  "employeeId": 1,
-  "month": 3,
-  "year": 2026,
-  "tds": 2000
-}
-```
-
-3. Fetch payroll:
+### View Payroll
 
 ```http
 GET /payroll/view
 ```
 
-4. Download payslip:
+### Download Payslip (PDF)
 
 ```http
 GET /payroll/payslip/:id
@@ -230,129 +211,103 @@ GET /payroll/payslip/:id
 
 ---
 
-# 📅 Attendance Flow
+## 📋 Tasks (Kanban Board)
 
-### Employee:
-
-* Check In → `/attendance/checkin`
-* Check Out → `/attendance/checkout`
-
-### HR:
-
-* Mark attendance:
-
-```json
-{
-  "employeeId": 2,
-  "status": "present"
-}
-```
-
----
-
-# 📋 Task Flow
-
-* HR/Manager → Create Task
-* Employee → Drag & update status
+* Drag & Drop tasks
 * Status:
 
   * todo
   * in_progress
   * completed
 
----
+### Role:
 
-# 🔑 RBAC (Role-Based Access)
-
-| Role     | Access                    |
-| -------- | ------------------------- |
-| Admin    | Full                      |
-| HR       | Manage employees, payroll |
-| Manager  | Tasks + attendance        |
-| Employee | Limited                   |
+* HR/Manager → Create Task
+* Employee → Update own task
 
 ---
 
-# 📄 API Endpoints (Important)
-
-### Auth
-
-* POST `/auth/login`
-* POST `/auth/refresh`
-
-### Employee
-
-* GET `/employees`
-* POST `/employees`
-
-### Payroll
-
-* POST `/payroll/generate`
-* GET `/payroll/view`
-* GET `/payroll/payslip/:id`
-
-### Attendance
-
-* POST `/attendance/checkin`
-* PUT `/attendance/checkout`
-* GET `/attendance?month=3&year=2026`
-
-### Tasks
-
-* GET `/tasks`
-* POST `/tasks`
-* PUT `/tasks/:id`
-
----
-
-# 🧪 Run Tests / Debug
+# 📁 Folder Structure
 
 ```bash
-npm run dev
+src/
+ ├── components/
+ ├── pages/
+ ├── services/
+ ├── context/
+ ├── utils/
+ ├── styles/
+ ├── routes/
 ```
 
-Check logs:
+---
 
-```bash
-docker logs hrms_app
+# ⚙️ API Base URL
+
+```js
+http://localhost:5001/api
 ```
 
 ---
 
 # 🛠️ Common Issues
 
-### ❌ Payroll not showing
+---
 
-✔ Ensure payroll generated
-✔ Check employee salary
+## ❌ API not working
+
+✔ Check backend is running
+✔ Check correct API URL
 
 ---
 
-### ❌ Puppeteer error
+## ❌ Token expired → logout
 
-✔ Install Linux dependencies
-✔ Use `--no-sandbox`
-
----
-
-### ❌ Token expires
-
-✔ Implement refresh token flow
+✔ Implement refresh token logic
 
 ---
 
-# 🚀 Future Improvements
+## ❌ Drag & Drop not working
 
-* Queue (BullMQ) for PDF generation
-* Redis caching
-* Email service
-* Notifications
-* Dashboard analytics
+✔ Ensure `draggableId` is string
+✔ Do not block drag with conditions
+
+---
+
+## ❌ Payroll not showing
+
+✔ Generate payroll first
+✔ Ensure employee has salary
+
+---
+
+# 🚀 Build for Production
+
+```bash
+npm run build
+```
+
+Output:
+
+```bash
+dist/
+```
+
+---
+
+# 🌍 Deployment Options
+
+* Vercel
+* Netlify
+* AWS S3
+* Nginx
 
 ---
 
 # 👨‍💻 Author
 
 Prince Raj 🚀
+
+---
 
 ---
