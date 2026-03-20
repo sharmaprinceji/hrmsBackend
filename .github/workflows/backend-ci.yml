@@ -1,0 +1,76 @@
+name: HRMS Backend CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: hrms
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Create .env for CI
+      - name: Setup environment variables
+        run: |
+          echo "PORT=5001" >> .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_USER=root" >> .env
+          echo "DB_PASSWORD=root" >> .env
+          echo "DB_NAME=hrms" >> .env
+          echo "REDIS_URL=redis://localhost:6379" >> .env
+          echo "JWT_SECRET=testsecret" >> .env
+          echo "JWT_REFRESH_SECRET=testsecret" >> .env
+
+      # 5️⃣ Wait for MySQL
+      - name: Wait for MySQL
+        run: sleep 15
+
+      # 6️⃣ Initialize DB
+      - name: Run DB Init
+        run: npm run db:init
+
+      # 7️⃣ Run server (optional test)
+      - name: Start server
+        run: npm start &
+
+      # 8️⃣ Build Docker Image
+      - name: Build Docker Image
+        run: docker build -t hrms-backend .
