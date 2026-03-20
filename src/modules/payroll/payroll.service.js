@@ -2,7 +2,7 @@ import pool from "../../config/db.config.js";
 import redisClient from "../../config/redis.config.js";
 import { payslipTemplate } from "../../utils/paySlipTemplates.js";
 import PayrollRepository from "./payroll.repository.js";
-import puppeteer from "puppeteer";
+// import puppeteer from "puppeteer";
 import puppeteer from "puppeteer-core";
 
 
