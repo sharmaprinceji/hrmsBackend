@@ -109,7 +109,7 @@ attendanceRouter.post(
  *         description: Monthly attendance report
  */
 attendanceRouter.get(
-  "/  ",
+  "/",
   authMiddleware,
   permissionMiddleware("attendance","view"),
   AttendanceController.monthlyReport

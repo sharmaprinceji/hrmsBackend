@@ -58,26 +58,26 @@ class AttendanceRepository {
 
   }
 
-  static async monthlyReport(month,year){
-    const query = `
-      SELECT
-        u.name,
-        e.employee_code,
-        COUNT(CASE WHEN a.status='present' THEN 1 END) AS present_days,
-        COUNT(CASE WHEN a.status='absent' THEN 1 END) AS absent_days
-      FROM attendance a
-      JOIN employees e ON a.employee_id=e.id
-      JOIN users u ON e.user_id=u.id
-      WHERE MONTH(a.attendance_date)=?
-      AND YEAR(a.attendance_date)=?
-      GROUP BY e.id
-    `;
+ static async monthlyReport(month, year) {
+  const query = `
+    SELECT
+      u.name,
+      e.employee_code,
+      COUNT(CASE WHEN a.status='present' THEN 1 END) AS present_days,
+      COUNT(CASE WHEN a.status='absent' THEN 1 END) AS absent_days
+    FROM attendance a
+    JOIN employees e ON a.employee_id = e.id
+    JOIN users u ON e.user_id = u.id
+    WHERE MONTH(a.attendance_date)=?
+    AND YEAR(a.attendance_date)=?
+    GROUP BY e.id
+    ORDER BY u.name ASC
+  `;
 
-    const [rows] = await pool.execute(query,[month,year]);
+  const [rows] = await pool.execute(query, [month, year]);
 
-    return rows;
-
-  }
+  return rows;
+}
 
   static async createAttendance(data){
 

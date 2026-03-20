@@ -44,6 +44,18 @@ class UserController {
 
   }
 
+  static async getUsers(req, res, next) {
+  try {
+
+    const users = await UserService.getUsers(req.user);
+
+    return successResponse(res, users, "Users fetched successfully");
+
+  } catch (err) {
+    next(err);
+  }
+}
+
 }
 
 export default UserController;

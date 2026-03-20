@@ -4,21 +4,52 @@ services:
 
   hrms-api:
     build: .
+    container_name: hrms-api
     ports:
       - "5001:5001"
+    env_file:
+      - .env
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: sh -c "sleep 5 && npm run db:init && npm run dev"
+    restart: always
+
+  worker:
+    build: .
+    container_name: hrms-worker
+    command: npm run worker
+    env_file:
+      - .env
+    depends_on:
       - redis
+    restart: always
 
   mysql:
     image: mysql:8
+    container_name: hrms-mysql
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: hrms
     ports:
       - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    image: redis
+    image: redis:7
+    container_name: hrms-redis
+    restart: always
     ports:
       - "6379:6379"
+
+volumes:
+  mysql_data:

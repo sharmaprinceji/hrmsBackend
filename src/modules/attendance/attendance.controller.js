@@ -45,21 +45,29 @@ class AttendanceController {
 
 }
 
-  static async monthlyReport(req,res,next){
+static async monthlyReport(req, res, next) {
+  try {
+    const { month, year } = req.query;
 
-    try{
-
-      const {month,year} = req.query;
-
-      const report = await AttendanceService.monthlyReport(month,year);
-
-      return successResponse(res,report);
-
-    }catch(err){
-      next(err);
+    if (!month || !year) {
+      return res.status(400).json({
+        success: false,
+        message: "Month and year are required"
+      });
     }
 
+    const report = await AttendanceService.monthlyReport(month, year);
+
+    return res.status(200).json({
+      success: true,
+      message: "Attendance report fetched successfully",
+      data: report
+    });
+
+  } catch (err) {
+    next(err);
   }
+}
 
 }
 

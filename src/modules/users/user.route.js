@@ -77,4 +77,23 @@ userRouter.delete(
   UserController.deleteUser
 );
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ */
+userRouter.get(
+  "/",
+  authMiddleware,
+  permissionMiddleware("employee", "view"),
+  UserController.getUsers
+);
+
 export default userRouter;

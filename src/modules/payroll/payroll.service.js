@@ -3,6 +3,9 @@ import redisClient from "../../config/redis.config.js";
 import { payslipTemplate } from "../../utils/paySlipTemplates.js";
 import PayrollRepository from "./payroll.repository.js";
 import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+
+
 
 class PayrollService {
 
@@ -105,8 +108,13 @@ class PayrollService {
       throw new Error("Payroll not found");
     }
 
+    // const browser = await puppeteer.launch({
+    //   args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    // });
+
     const browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+      executablePath: "/usr/bin/google-chrome",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();

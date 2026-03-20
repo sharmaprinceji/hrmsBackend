@@ -3,8 +3,12 @@ import logger from "./logger.config.js";
 
 const redisClient = createClient({
     url: process.env.REDIS_URL,
-    maxRetriesPerRequest:null,
-});
+})
+
+// const redisClient = createClient({
+//     url: process.env.REDIS_URL,
+//     maxRetriesPerRequest:null,
+// });
 
 // const redisClient = createClient({
 //     socket: {

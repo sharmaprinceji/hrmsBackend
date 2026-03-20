@@ -82,6 +82,19 @@ class UserService {
   return { userId: targetUserId };
 }
 
+static async getUsers(currentUser) {
+
+  // ✅ Employee → only self
+  if (currentUser.role === "employee") {
+    return [await UserRepository.findById(currentUser.userId)];
+  }
+
+  // ✅ Admin / HR / Manager → role-based access
+  const users = await UserRepository.getUsersByRole(currentUser);
+
+  return users;
+}
+
 }
 
 export default UserService;

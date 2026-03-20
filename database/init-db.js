@@ -2,6 +2,7 @@ import mysql from "mysql2/promise";
 import fs from "node:fs";
 import path from "node:path";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
 
 dotenv.config();
 
@@ -57,6 +58,48 @@ async function initDatabase() {
         }
 
         console.log("Database initialized successfully");
+
+        // =========================
+        // CREATE DEFAULT ADMIN USER
+        // =========================
+
+        const adminEmail = "admin@hrms.com";
+        const adminPassword = "Admin@123";
+
+        // check if admin exists
+        const [existingAdmin] = await connection.query(
+            "SELECT * FROM users WHERE email = ?",
+            [adminEmail]
+        );
+
+        if (existingAdmin.length === 0) {
+            // get admin role id
+            const [roles] = await connection.query(
+                "SELECT id FROM roles WHERE name = 'admin' LIMIT 1"
+            );
+
+            if (roles.length === 0) {
+                throw new Error("Admin role not found. Seed roles first.");
+            }
+
+            const roleId = roles[0].id;
+
+            // hash password
+            const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+            // insert admin user
+            await connection.query(
+                `
+    INSERT INTO users (name, email, password, role_id, status)
+    VALUES (?, ?, ?, ?, 'active')
+    `,
+                ["Super Admin", adminEmail, hashedPassword, roleId]
+            );
+
+            console.log("Default admin user created");
+        } else {
+            console.log("Admin already exists");
+        }
 
         await connection.end();
 
