@@ -2,87 +2,105 @@ import pool from "../../config/db.config.js";
 
 class LeaveRepository {
 
-  static async getEmployeeByUserId(userId){
+  // =========================
+  // GET EMPLOYEE BY USER ID
+  // =========================
+  static async getEmployeeByUserId(userId) {
+    const [rows] = await pool.execute(
+      `SELECT id FROM employees WHERE user_id=? AND deleted_at IS NULL`,
+      [userId]
+    );
+    return rows[0];
+  }
 
-    const query = `
-      SELECT id
-      FROM employees
-      WHERE user_id=? AND deleted_at IS NULL
-    `;
+  // =========================
+  // GET SINGLE LEAVE BALANCE (for apply/approve)
+  // =========================
+  static async getLeaveBalanceByType(employeeId, leaveTypeId, conn = pool) {
+    const db = conn || pool;
 
-    const [rows] = await pool.execute(query,[userId]);
+    const [rows] = await db.execute(
+      `SELECT * FROM leave_balances 
+       WHERE employee_id=? AND leave_type_id=?`,
+      [employeeId, leaveTypeId]
+    );
 
     return rows[0];
-
   }
 
-static async getLeaveBalance(userId, conn = pool) {
+  // =========================
+  // GET MY LEAVE BALANCES
+  // =========================
+  static async getLeaveBalancesByUser(userId) {
+    const [rows] = await pool.execute(
+      `
+      SELECT 
+        lb.id,
+        u.name AS employee_name,
+        lt.name AS leave_type,
+        lb.total_leaves,
+        lb.used_leaves,
+        lb.remaining_leaves
+      FROM leave_balances lb
+      JOIN employees e ON lb.employee_id = e.id
+      JOIN users u ON e.user_id = u.id
+      JOIN leave_types lt ON lb.leave_type_id = lt.id
+      WHERE e.user_id = ?
+      `,
+      [userId]
+    );
 
-  const query = `
-    SELECT 
-      lb.id,
-      u.name AS employee_name,
-      lt.name AS leave_type,
-      lb.total_leaves,
-      lb.used_leaves,
-      lb.remaining_leaves
-    FROM leave_balances lb
-    JOIN employees e ON lb.employee_id = e.id
-    JOIN users u ON e.user_id = u.id
-    JOIN leave_types lt ON lb.leave_type_id = lt.id
-    WHERE e.user_id = ?
-  `;
+    return rows;
+  }
 
-  const [rows] = await conn.execute(query, [userId]);
-
-  return rows;
-}
-
+  // =========================
+  // GET ALL LEAVE BALANCES (HR/Admin)
+  // =========================
   static async getLeaveBalancesAll() {
-  const query = `
-    SELECT
-      lb.id,
-      u.name AS employee_name,
-      lt.name AS leave_type,
-      lb.total_leaves,
-      lb.used_leaves,
-      lb.remaining_leaves
-    FROM leave_balances lb
-    JOIN employees e ON lb.employee_id = e.id
-    JOIN users u ON e.user_id = u.id
-    JOIN leave_types lt ON lb.leave_type_id = lt.id
-    ORDER BY u.name ASC
-  `;
+    const [rows] = await pool.execute(`
+      SELECT
+        lb.id,
+        u.name AS employee_name,
+        lt.name AS leave_type,
+        lb.total_leaves,
+        lb.used_leaves,
+        lb.remaining_leaves
+      FROM leave_balances lb
+      JOIN employees e ON lb.employee_id = e.id
+      JOIN users u ON e.user_id = u.id
+      JOIN leave_types lt ON lb.leave_type_id = lt.id
+      ORDER BY u.name ASC
+    `);
 
-  const [rows] = await pool.execute(query);
-
-  return rows;
-}
-
-  static async createLeaveRequest(data){
-
-    const query = `
-      INSERT INTO leave_requests
-      (employee_id,leave_type_id,start_date,end_date,days,reason)
-      VALUES (?,?,?,?,?,?)
-    `;
-
-    const [result] = await pool.execute(query,[
-      data.employeeId,
-      data.leaveTypeId,
-      data.startDate,
-      data.endDate,
-      data.days,
-      data.reason
-    ]);
-
-    return {leaveId:result.insertId};
-
+    return rows;
   }
 
-  static async getLeaveRequests(){
+  // =========================
+  // CREATE LEAVE REQUEST
+  // =========================
+  static async createLeaveRequest(data) {
+    const [result] = await pool.execute(
+      `INSERT INTO leave_requests
+       (employee_id,leave_type_id,start_date,end_date,days,reason)
+       VALUES (?,?,?,?,?,?)`,
+      [
+        data.employeeId,
+        data.leaveTypeId,
+        data.startDate,
+        data.endDate,
+        data.days,
+        data.reason
+      ]
+    );
 
-    const query = `
+    return { leaveId: result.insertId };
+  }
+
+  // =========================
+  // GET ALL LEAVE REQUESTS
+  // =========================
+  static async getLeaveRequests() {
+    const [rows] = await pool.execute(`
       SELECT
         lr.id,
         u.name,
@@ -92,83 +110,118 @@ static async getLeaveBalance(userId, conn = pool) {
         lr.days,
         lr.status
       FROM leave_requests lr
-      JOIN employees e ON lr.employee_id=e.id
-      JOIN users u ON e.user_id=u.id
-      JOIN leave_types lt ON lr.leave_type_id=lt.id
+      JOIN employees e ON lr.employee_id = e.id
+      JOIN users u ON e.user_id = u.id
+      JOIN leave_types lt ON lr.leave_type_id = lt.id
       ORDER BY lr.created_at DESC
-    `;
-
-    const [rows] = await pool.execute(query);
+    `);
 
     return rows;
-
   }
 
-  static async getLeaveById(id,conn=pool){
+  // =========================
+  // GET MY LEAVE REQUESTS
+  // =========================
+  static async getMyLeaveRequests(userId) {
+    const [rows] = await pool.execute(
+      `
+      SELECT
+        lr.id,
+        lt.name AS leave_type,
+        lr.start_date,
+        lr.end_date,
+        lr.days,
+        lr.status
+      FROM leave_requests lr
+      JOIN employees e ON lr.employee_id = e.id
+      JOIN leave_types lt ON lr.leave_type_id = lt.id
+      WHERE e.user_id = ?
+      ORDER BY lr.created_at DESC
+      `,
+      [userId]
+    );
 
-    const query = `
-      SELECT *
-      FROM leave_requests
-      WHERE id=?
-    `;
+    return rows;
+  }
 
-    const [rows] = await conn.execute(query,[id]);
+  // =========================
+  // GET LEAVE BY ID
+  // =========================
+  static async getLeaveById(id, conn = pool) {
+    const db = conn || pool;
+
+    const [rows] = await db.execute(
+      `SELECT * FROM leave_requests WHERE id=?`,
+      [id]
+    );
 
     return rows[0];
-
   }
 
-  static async updateLeaveStatus(id,status,approverId,conn=pool){
+  // =========================
+  // UPDATE LEAVE STATUS
+  // =========================
+  static async updateLeaveStatus(id, status, approverId, conn = pool) {
+    const db = conn || pool;
 
-    const query = `
-      UPDATE leave_requests
-      SET status=?,approved_by=?
-      WHERE id=?
-    `;
-
-    await conn.execute(query,[status,approverId,id]);
-
+    await db.execute(
+      `UPDATE leave_requests
+       SET status=?, approved_by=?
+       WHERE id=?`,
+      [status, approverId, id]
+    );
   }
 
-  static async updateLeaveBalance(employeeId,leaveTypeId,days,conn=pool){
+  // =========================
+  // UPDATE LEAVE BALANCE
+  // =========================
+  static async updateLeaveBalance(employeeId, leaveTypeId, days, conn = pool) {
+    const db = conn || pool;
 
-    const query = `
-      UPDATE leave_balances
-      SET
-        used_leaves = used_leaves + ?,
-        remaining_leaves = remaining_leaves - ?
-      WHERE employee_id=? AND leave_type_id=?
-    `;
-
-    await conn.execute(query,[
-      days,
-      days,
-      employeeId,
-      leaveTypeId
-    ]);
-
+    await db.execute(
+      `UPDATE leave_balances
+       SET used_leaves = used_leaves + ?,
+           remaining_leaves = remaining_leaves - ?
+       WHERE employee_id=? AND leave_type_id=?`,
+      [days, days, employeeId, leaveTypeId]
+    );
   }
 
-  static async checkOverlap(employeeId, startDate, endDate){
+  // =========================
+  // CHECK OVERLAP
+  // =========================
+  static async checkOverlap(employeeId, startDate, endDate) {
+    const [rows] = await pool.execute(
+      `
+      SELECT id FROM leave_requests
+      WHERE employee_id = ?
+      AND status IN ('pending','approved')
+      AND (start_date <= ? AND end_date >= ?)
+      `,
+      [employeeId, endDate, startDate]
+    );
 
-  const query = `
-    SELECT id
-    FROM leave_requests
-    WHERE employee_id = ?
-    AND status IN ('pending','approved')
-    AND (
-      start_date <= ? AND end_date >= ?
-    )
-  `;
+    return rows.length > 0;
+  }
 
-  const [rows] = await pool.execute(query, [
-    employeeId,
-    endDate,
-    startDate
-  ]);
+  // =========================
+  // GET EMPLOYEE ROLE (FOR APPROVAL LOGIC)
+  // =========================
+  static async getEmployeeWithRole(employeeId, conn = pool) {
+    const db = conn || pool;
 
-  return rows.length > 0;
-}
+    const [rows] = await db.execute(
+      `
+      SELECT e.id, u.role_id
+      FROM employees e
+      JOIN users u ON e.user_id = u.id
+      WHERE e.id = ?
+      `,
+      [employeeId]
+    );
+
+    return rows[0];
+  }
 
 }
 

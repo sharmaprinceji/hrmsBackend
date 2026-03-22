@@ -21,7 +21,7 @@ class LeaveController {
 
     try{
 
-      const leaves = await LeaveService.getLeaveRequests();
+      const leaves = await LeaveService.getLeaveRequests(req.user);
 
       return successResponse(res,leaves);
 
