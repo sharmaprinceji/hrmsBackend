@@ -44,19 +44,18 @@ class LeaveController {
     }
   }
 
-  static async getMyLeaves(req,res,next){
+ static async getMyLeaves(req, res, next) {
+  try {
+    const employeeId = req.user.userId; 
+   
+    const leaves = await LeaveService.getLeaveBalance(employeeId);
 
-    try{
+    return successResponse(res, leaves);
 
-      const leaves = await LeaveService. getLeaveBalance();
-
-      return successResponse(res,leaves);
-
-    }catch(err){
-      next(err);
-    }
-
+  } catch (err) {
+    next(err);
   }
+}
   
 
   static async approveLeave(req,res,next){

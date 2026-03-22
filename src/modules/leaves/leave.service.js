@@ -64,9 +64,9 @@ class LeaveService {
     return LeaveRepository.getLeaveBalancesAll();
   }
 
-  static async getLeaveBalance(){
-    return LeaveRepository.getLeaveBalance();
-  }
+ static async getLeaveBalance(employeeId) {
+  return LeaveRepository.getLeaveBalance(employeeId);
+}
 
   static async approveLeave(leaveId, approverId) {
 
