@@ -11,17 +11,17 @@ const DB_NAME = process.env.DB_NAME;
 async function initDatabase() {
     try {
 
-        // const connection = await mysql.createConnection({
-        //     host: process.env.DB_HOST,
-        //     user: process.env.DB_USER,
-        //     password: process.env.DB_PASSWORD,
-        //     multipleStatements: true
-        // });
-
-        const connection = mysql.createPool({
-            uri: process.env.DB_URL,
+        const connection = await mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
             multipleStatements: true
         });
+
+        // const connection = mysql.createPool({
+        //     uri: process.env.DB_URL,
+        //     multipleStatements: true
+        // });
 
 
         console.log("Connected to MySQL");

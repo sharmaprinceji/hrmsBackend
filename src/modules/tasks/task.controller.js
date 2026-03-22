@@ -21,7 +21,7 @@ class TaskController {
 
     try{
 
-      const tasks = await TaskService.getTasks(req.user);
+      const tasks = await TaskService.getTasks(req.user.userId,req.user.roleId);
 
       return successResponse(res,tasks);
 

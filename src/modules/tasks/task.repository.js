@@ -56,29 +56,49 @@ class TaskRepository {
 
   }
 
-  static async updateTask(id,data){
+  static async getAllTasks() {
+  const query = `
+    SELECT
+      t.id,
+      t.title,
+      t.description,
+      t.priority,
+      t.status,
+      t.due_date AS dueDate,
+      u1.name AS assigned_by,
+      u2.name AS assigned_to
+    FROM tasks t
+    JOIN users u1 ON t.assigned_by = u1.id
+    JOIN users u2 ON t.assigned_to = u2.id
+    WHERE t.deleted_at IS NULL
+    ORDER BY t.created_at DESC
+  `;
 
-    const query = `
-      UPDATE tasks
-      SET
-        title=?,
-        description=?,
-        priority=?,
-        status=?,
-        due_date=?
-      WHERE id=? AND deleted_at IS NULL
-    `;
+  const [rows] = await pool.execute(query);
+  return rows;
+}
 
-    await pool.execute(query,[
-      data.title,
-      data.description,
-      data.priority,
-      data.status,
-      data.dueDate,
-      id
-    ]);
+static async updateTask(id, data) {
+  const query = `
+    UPDATE tasks
+    SET
+      title = ?,
+      description = ?,
+      priority = ?,
+      status = ?,
+      due_date = ?
+    WHERE id = ? AND deleted_at IS NULL
+  `;
 
-  }
+  await pool.execute(query, [
+    data.title ?? null,
+    data.description ?? null,
+    data.priority ?? "low",
+    data.status ?? "todo",
+    data.dueDate ?? null,   // 🔥 FIX HERE
+    id,
+  ]);
+}
 
   static async deleteTask(id){
 

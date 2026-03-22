@@ -21,16 +21,32 @@ class TaskService {
 
   }
 
-  static async getTasks(user){
-
-    return TaskRepository.getTasks(user.userId,user.roleId);
-
+  static async getTasks(userId,roleId) {
+  let tasks;
+  if(roleId==5){
+     tasks=await TaskRepository.getTasks(userId,roleId);
+  }
+  else{
+      tasks = await TaskRepository.getAllTasks();
   }
 
+ 
+
+  return tasks.map(t => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    priority: t.priority,
+    status: t.status,
+    dueDate: t.due_date,        // ✅ map
+    assignedTo: t.assigned_to,  // ✅ map
+  }));
+}
+
  static async updateTask(id,data){
- console.log("data==>",id,data);
+ //console.log("data==>",id,data);
   const task = await TaskRepository.getTaskById(id);
-console.log("task",task);
+//console.log("task",task);
   if(!task){
      throw new Error("Task not found");
   }
