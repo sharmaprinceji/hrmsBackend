@@ -17,6 +17,7 @@
   "dependencies": {
     "@bull-board/api": "^5.10.0",
     "@bull-board/express": "^5.10.0",
+    "@sparticuz/chromium": "^143.0.4",
     "@upstash/redis": "^1.37.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.71.0",
@@ -33,6 +34,7 @@
     "mysql2": "^3.20.0",
     "nodemailer": "^8.0.3",
     "puppeteer": "^24.40.0",
+    "puppeteer-core": "^24.40.0",
     "redis": "^5.11.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
