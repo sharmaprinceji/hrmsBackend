@@ -44,13 +44,31 @@ class UserController {
 
   }
 
-  static async getUsers(req, res, next) {
+//   static async getUsers(req, res, next) {
+//   try {
+//     console.log("message",req.user);
+//     const users = await UserService.getUsers(req.user);
+
+//     return successResponse(res, users, "Users fetched successfully");
+
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+
+static async getUsers(req, res, next) {
   try {
-    console.log("message",req.user);
-    const users = await UserService.getUsers(req.user);
+    const { search = "", role = "", page = 1, limit = 10 } = req.query;
 
-    return successResponse(res, users, "Users fetched successfully");
+    const result = await UserService.getUsers(req.user, {
+      search,
+      role,
+      page: Number(page),
+      limit: Number(limit)
+    });
+    // console.log('69===>',result);
 
+    return successResponse(res, result, "Users fetched successfully");
   } catch (err) {
     next(err);
   }

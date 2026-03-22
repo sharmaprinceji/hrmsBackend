@@ -82,17 +82,47 @@ class UserService {
   return { userId: targetUserId };
 }
 
-static async getUsers(currentUser) {
-    console.log("currentUser",currentUser);
-  // ✅ Employee → only self
+// static async getUsers(currentUser) {
+//     console.log("currentUser",currentUser);
+//   // ✅ Employee → only self
+//   if (currentUser.role === "employee") {
+//     return [await UserRepository.findById(currentUser.userId)];
+//   }
+
+//   // ✅ Admin / HR / Manager → role-based access
+//   const users = await UserRepository.getUsersByRole(currentUser);
+
+//   return users;
+// }
+
+static async getUsers(currentUser, filters) {
+  const { search, role, page, limit } = filters;
+
+  // Employee → only self
   if (currentUser.role === "employee") {
-    return [await UserRepository.findById(currentUser.userId)];
+    const user = await UserRepository.findById(currentUser.userId);
+    return {
+      data: [user],
+      total: 1,
+      page: 1,
+      totalPages: 1
+    };
   }
 
-  // ✅ Admin / HR / Manager → role-based access
-  const users = await UserRepository.getUsersByRole(currentUser);
+  const data=await UserRepository.getUsersByRole(currentUser, filters);
+//   console.log("113====>",{
+//   data: data,
+//   total: data.length, // ✅ total based on array length
+//   page: page,
+//   totalPages: Math.ceil(data.length / limit)
+// });
 
-  return users;
+  return {
+  data: data,
+  total: data.length, // ✅ total based on array length
+  page: page,
+  totalPages: Math.ceil(data.length / limit)
+};
 }
 
 }

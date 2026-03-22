@@ -2,7 +2,7 @@ import pool from "../../config/db.config.js";
 
 class UserRepository {
 
-  static async findById(id){
+  static async findById(id) {
 
     const query = `
       SELECT id,name,email,role_id
@@ -11,42 +11,118 @@ class UserRepository {
       LIMIT 1
     `;
 
-    const [rows] = await pool.execute(query,[id]);
+    const [rows] = await pool.execute(query, [id]);
 
     return rows[0];
 
   }
 
-  static async updateUser(id, data) {
+ static async getUsersByRole(currentUser, { search, role, page = 1, limit = 10 }) {
 
-  let query = "UPDATE users SET ";
+  let where = `
+    WHERE u.deleted_at IS NULL
+  `;
+
   const values = [];
 
-  if (data.name !== undefined) {
-    query += "name = ?, ";
-    values.push(data.name);
+  // ✅ ROLE ACCESS (who can see whom)
+  where += `
+    AND (
+      u.role_id = ?
+      OR u.role_id IN (
+        SELECT target_role_id
+        FROM role_manage_rules
+        WHERE manager_role_id = ?
+      )
+    )
+  `;
+  values.push(currentUser.roleId, currentUser.roleId);
+
+  // ✅ SEARCH
+  if (search && search.trim() !== "") {
+    where += `
+      AND (
+        LOWER(u.name) LIKE ?
+        OR LOWER(u.email) LIKE ?
+        OR u.id = ?
+      )
+    `;
+    values.push(
+      `%${search.toLowerCase()}%`,
+      `%${search.toLowerCase()}%`,
+      isNaN(search) ? 0 : Number(search)
+    );
   }
 
-  if (data.email !== undefined) {
-    query += "email = ?, ";
-    values.push(data.email);
+  // ✅ ROLE FILTER (STRICT)
+  if (role && role.trim() !== "") {
+    where += ` AND r.name = ? `;
+    values.push(role);
   }
 
-  if (data.roleId !== undefined) {
-    query += "role_id = ?, ";
-    values.push(data.roleId);
-  }
+  // ✅ COUNT
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM users u
+    JOIN roles r ON u.role_id = r.id
+    ${where}
+  `;
 
-  // ❗ remove last comma
-  query = query.slice(0, -2);
+  const [countResult] = await pool.execute(countQuery, values);
+  const total = countResult[0].total;
 
-  query += " WHERE id = ? AND deleted_at IS NULL";
-  values.push(id);
+  const offset = (page - 1) * limit;
 
-  await pool.execute(query, values);
+  // ✅ DATA QUERY
+  const dataQuery = `
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      u.status,
+      r.name AS role_name
+    FROM users u
+    JOIN roles r ON u.role_id = r.id
+    ${where}
+    ORDER BY u.created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+
+  const [rows] = await pool.execute(dataQuery, [...values, limit, offset]);
+
+  return rows;
 }
 
-  static async softDelete(id){
+  static async updateUser(id, data) {
+
+    let query = "UPDATE users SET ";
+    const values = [];
+
+    if (data.name !== undefined) {
+      query += "name = ?, ";
+      values.push(data.name);
+    }
+
+    if (data.email !== undefined) {
+      query += "email = ?, ";
+      values.push(data.email);
+    }
+
+    if (data.roleId !== undefined) {
+      query += "role_id = ?, ";
+      values.push(data.roleId);
+    }
+
+    // ❗ remove last comma
+    query = query.slice(0, -2);
+
+    query += " WHERE id = ? AND deleted_at IS NULL";
+    values.push(id);
+
+    await pool.execute(query, values);
+  }
+
+  static async softDelete(id) {
 
     const query = `
       UPDATE users
@@ -54,13 +130,13 @@ class UserRepository {
       WHERE id=?
     `;
 
-    await pool.execute(query,[id]);
+    await pool.execute(query, [id]);
 
   }
 
-static async getUsersByRole(currentUser) {
+  static async getUsersByRole(currentUser) {
 
-  const query = `
+    const query = `
     SELECT 
       u.id,
       u.name,
@@ -81,13 +157,13 @@ static async getUsersByRole(currentUser) {
     ORDER BY u.created_at DESC
   `;
 
-  const [rows] = await pool.execute(query, [
-    currentUser.roleId,
-    currentUser.roleId
-  ]);
+    const [rows] = await pool.execute(query, [
+      currentUser.roleId,
+      currentUser.roleId
+    ]);
 
-  return rows;
-}
+    return rows;
+  }
 }
 
 export default UserRepository;
