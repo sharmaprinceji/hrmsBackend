@@ -69,6 +69,10 @@ class AttendanceService {
 
     }
 
+    static async dailyReport(month, year, user) {
+        return AttendanceRepository.dailyReport(month, year, user);
+    }
+
 }
 
 export default AttendanceService;

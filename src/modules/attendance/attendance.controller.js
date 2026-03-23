@@ -2,73 +2,93 @@ import AttendanceService from "./attendance.service.js";
 import { successResponse } from "../../utils/response.utils.js";
 
 class AttendanceController {
- 
-  static async checkIn(req,res,next){
 
-    try{
+  static async checkIn(req, res, next) {
+
+    try {
 
       const result = await AttendanceService.checkIn(req.user.userId);
 
-      return successResponse(res,result,"Check-in successful");
+      return successResponse(res, result, "Check-in successful");
 
-    }catch(err){
+    } catch (err) {
       next(err);
     }
 
   }
 
-  static async checkOut(req,res,next){
+  static async checkOut(req, res, next) {
 
-    try{
+    try {
 
       const result = await AttendanceService.checkOut(req.user.userId);
 
-      return successResponse(res,result,"Check-out successful");
+      return successResponse(res, result, "Check-out successful");
 
-    }catch(err){
+    } catch (err) {
       next(err);
     }
 
   }
 
-  static async markAttendance(req,res,next){
+  static async markAttendance(req, res, next) {
 
-  try{
+    try {
 
-    const result = await AttendanceService.markAttendance(req.body);
+      const result = await AttendanceService.markAttendance(req.body);
 
-    return successResponse(res,result,"Attendance marked");
+      return successResponse(res, result, "Attendance marked");
 
-  }catch(err){
-    next(err);
-  }
-
-}
-
-static async monthlyReport(req, res, next) {
-  try {
-    const { month, year } = req.query;
-
-    if (!month || !year) {
-      return res.status(400).json({
-        success: false,
-        message: "Month and year are required"
-      });
+    } catch (err) {
+      next(err);
     }
 
-    const report = await AttendanceService.monthlyReport(month, year);
-
-    return res.status(200).json({
-      success: true,
-      message: "Attendance report fetched successfully",
-      data: report
-    });
-
-  } catch (err) {
-    next(err);
   }
-}
 
+  // static async monthlyReport(req, res, next) {
+  //   try {
+  //     const { month, year } = req.query;
+
+  //     if (!month || !year) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: "Month and year are required"
+  //       });
+  //     }
+
+  //     const report = await AttendanceService.monthlyReport(month, year);
+
+  //     return res.status(200).json({
+  //       success: true,
+  //       message: "Attendance report fetched successfully",
+  //       data: report
+  //     });
+
+  //   } catch (err) {
+  //     next(err);
+  //   }
+  // }
+
+  static async monthlyReport(req, res, next) {
+    try {
+      const { month, year } = req.query;
+
+      const report = await AttendanceService.dailyReport(
+        month,
+        year,
+        req.user
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Attendance fetched",
+        data: report
+      });
+
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default AttendanceController;

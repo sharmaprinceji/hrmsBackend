@@ -96,6 +96,40 @@ class AttendanceRepository {
 
 }
 
+static async dailyReport(month, year, user) {
+
+  let query = `
+    SELECT
+      e.id as employee_id,
+      u.name,
+      e.employee_code,
+      a.attendance_date,
+      a.status,
+      a.check_in,
+      a.check_out
+    FROM employees e
+    JOIN users u ON e.user_id = u.id
+    LEFT JOIN attendance a 
+      ON a.employee_id = e.id
+      AND MONTH(a.attendance_date)=?
+      AND YEAR(a.attendance_date)=?
+  `;
+
+  const params = [month, year];
+
+  // 👤 Employee → only own
+  if (user.roleId === 5) {
+    query += ` WHERE e.user_id = ?`;
+    params.push(user.userId);
+  }
+
+  query += ` ORDER BY u.name ASC`;
+
+  const [rows] = await pool.execute(query, params);
+
+  return rows;
+}
+
 }
 
 export default AttendanceRepository;
