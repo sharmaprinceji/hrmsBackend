@@ -5,127 +5,138 @@ import { logAudit } from "../../utils/auditLogger.js";
 
 class UserService {
 
- static async updateUser(currentUser, targetUserId, data) {
+  static async updateUser(currentUser, targetUserId, data) {
+    const targetUser = await UserRepository.findById(targetUserId);
 
-  const targetUser = await UserRepository.findById(targetUserId);
+    if (!targetUser) {
+      throw new Error("User not found");
+    }
 
-  if (!targetUser) {
-    throw new Error("User not found");
-  }
-
-  const query = `
+    // ✅ permission check
+    const query = `
     SELECT id
     FROM role_manage_rules
     WHERE manager_role_id=? AND target_role_id=?
     LIMIT 1
   `;
 
-  const [rows] = await pool.execute(query, [
-    currentUser.roleId,
-    targetUser.role_id
-  ]);
+    const [rows] = await pool.execute(query, [
+      currentUser.roleId,
+      targetUser.role_id
+    ]);
 
-  if (rows.length === 0 && currentUser.userId !== targetUserId) {
-    throw new Error("You are not allowed to update this user");
+    if (rows.length === 0 && currentUser.userId != targetUserId) {
+      throw new Error("You are not allowed to update this user");
+    }
+
+    // ✅ clean data (IMPORTANT)
+    const cleanData = Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [k, v ?? null])
+    );
+
+    const oldData = targetUser;
+
+    // ✅ update
+    await UserRepository.updateUser(targetUserId, cleanData);
+
+    // ✅ safe audit (never break main flow)
+    try {
+      await logAudit({
+        userId: currentUser.userId ?? null,
+        action: "update",
+        entityType: "user",
+        entityId: targetUserId,
+        oldData,
+        newData: cleanData
+      });
+    } catch (err) {
+      console.error("Audit failed:", err.message);
+    }
+
+    return { userId: targetUserId };
   }
-
-  const oldData = targetUser;
-
-  await UserRepository.updateUser(targetUserId, data);
-
-  await logAudit({
-    userId: currentUser.userId,
-    action: "update",
-    entityType: "user",
-    entityId: targetUserId,
-    oldData,
-    newData: data
-  });
-
-  return { userId: targetUserId };
-}
 
   static async deleteUser(currentUser, targetUserId) {
 
-  const targetUser = await UserRepository.findById(targetUserId);
+    const targetUser = await UserRepository.findById(targetUserId);
 
-  if (!targetUser) {
-    throw new Error("User not found");
-  }
+    if (!targetUser) {
+      throw new Error("User not found");
+    }
 
-  const query = `
+    const query = `
     SELECT id
     FROM role_manage_rules
     WHERE manager_role_id=? AND target_role_id=?
     LIMIT 1
   `;
 
-  const [rows] = await pool.execute(query, [
-    currentUser.roleId,
-    targetUser.role_id
-  ]);
+    const [rows] = await pool.execute(query, [
+      currentUser.roleId,
+      targetUser.role_id
+    ]);
 
-  if (rows.length === 0) {
-    throw new Error("You are not allowed to delete this user");
+    if (rows.length === 0) {
+      throw new Error("You are not allowed to delete this user");
+    }
+
+    await UserRepository.softDelete(targetUserId);
+
+    await logAudit({
+      userId: currentUser.userId,
+      action: "delete",
+      entityType: "user",
+      entityId: targetUserId,
+      oldData: targetUser
+    });
+
+    return { userId: targetUserId };
   }
 
-  await UserRepository.softDelete(targetUserId);
+  // static async getUsers(currentUser) {
+  //     console.log("currentUser",currentUser);
+  //   // ✅ Employee → only self
+  //   if (currentUser.role === "employee") {
+  //     return [await UserRepository.findById(currentUser.userId)];
+  //   }
 
-  await logAudit({
-    userId: currentUser.userId,
-    action: "delete",
-    entityType: "user",
-    entityId: targetUserId,
-    oldData: targetUser
-  });
+  //   // ✅ Admin / HR / Manager → role-based access
+  //   const users = await UserRepository.getUsersByRole(currentUser);
 
-  return { userId: targetUserId };
-}
+  //   return users;
+  // }
 
-// static async getUsers(currentUser) {
-//     console.log("currentUser",currentUser);
-//   // ✅ Employee → only self
-//   if (currentUser.role === "employee") {
-//     return [await UserRepository.findById(currentUser.userId)];
-//   }
+  static async getUsers(currentUser, filters) {
+    const { search, role, page, limit } = filters;
 
-//   // ✅ Admin / HR / Manager → role-based access
-//   const users = await UserRepository.getUsersByRole(currentUser);
+    // Employee → only self
+    if (currentUser.role === "employee") {
+      const user = await UserRepository.findById(currentUser.userId);
+      return {
+        data: [user],
+        total: 1,
+        page: 1,
+        totalPages: 1
+      };
+    }
 
-//   return users;
-// }
+    const data = await UserRepository.getUsersByRole(currentUser, filters);
 
-static async getUsers(currentUser, filters) {
-  const { search, role, page, limit } = filters;
-
-  // Employee → only self
-  if (currentUser.role === "employee") {
-    const user = await UserRepository.findById(currentUser.userId);
     return {
-      data: [user],
-      total: 1,
-      page: 1,
-      totalPages: 1
+      data: data,
+      total: data.length, // ✅ total based on array length
+      page: page,
+      totalPages: Math.ceil(data.length / limit)
     };
   }
 
-  const data=await UserRepository.getUsersByRole(currentUser, filters);
+  static async getProfile(userId) {
+    const user = await UserRepository.getProfile(userId);
 
-  return {
-  data: data,
-  total: data.length, // ✅ total based on array length
-  page: page,
-  totalPages: Math.ceil(data.length / limit)
-};
-}
+    if (!user) throw new Error("User not found");
 
-static async getProfile(userId) {
-  const user = await UserRepository.getProfile(userId);
-
-  if (!user) throw new Error("User not found");
-
-  return user;
-}
+    return user;
+  }
 
 }
 

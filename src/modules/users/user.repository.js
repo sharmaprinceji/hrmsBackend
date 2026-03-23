@@ -94,29 +94,38 @@ class UserRepository {
   }
 
   static async updateUser(id, data) {
-
-    let query = "UPDATE users SET ";
+    const fields = [];
     const values = [];
 
+    // NAME
     if (data.name !== undefined) {
-      query += "name = ?, ";
-      values.push(data.name);
+      fields.push("name = ?");
+      values.push(data.name ?? null);
     }
 
+    // EMAIL
     if (data.email !== undefined) {
-      query += "email = ?, ";
-      values.push(data.email);
+      fields.push("email = ?");
+      values.push(data.email ?? null);
     }
 
+    //ROLE
     if (data.roleId !== undefined) {
-      query += "role_id = ?, ";
-      values.push(data.roleId);
+      fields.push("role_id = ?");
+      values.push(data.roleId ?? null);
     }
 
-    // ❗ remove last comma
-    query = query.slice(0, -2);
+    // no fields
+    if (fields.length === 0) {
+      throw new Error("No fields to update");
+    }
 
-    query += " WHERE id = ? AND deleted_at IS NULL";
+    const query = `
+    UPDATE users
+    SET ${fields.join(", ")}
+    WHERE id = ? AND deleted_at IS NULL
+  `;
+
     values.push(id);
 
     await pool.execute(query, values);
