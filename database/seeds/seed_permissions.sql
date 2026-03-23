@@ -36,4 +36,7 @@ INSERT INTO permissions(module,action) VALUES
 ('holiday','create'),
 ('holiday','update'),
 ('holiday','delete'),
-('holiday','view');
+('holiday','view'),
+
+('role','create'),
+('role','view');

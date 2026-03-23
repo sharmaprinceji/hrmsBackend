@@ -17,19 +17,8 @@ services:
     command: sh -c "sleep 10 && npm run db:init && npm run dev"
     restart: always
 
-  worker:
-    build: .
-    container_name: hrms-worker
-    command: npm run worker
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - mysql
-    restart: always
-
   mysql:
-    image: mysql:8
+    image: mysql:8.0
     container_name: hrms-mysql
     restart: always
     environment:
@@ -39,7 +28,6 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
       interval: 10s
