@@ -17,16 +17,16 @@ class UserRepository {
 
   }
 
- static async getUsersByRole(currentUser, { search, role, page = 1, limit = 10 }) {
+  static async getUsersByRole(currentUser, { search, role, page = 1, limit = 10 }) {
 
-  let where = `
+    let where = `
     WHERE u.deleted_at IS NULL
   `;
 
-  const values = [];
+    const values = [];
 
-  // ✅ ROLE ACCESS (who can see whom)
-  where += `
+    // ✅ ROLE ACCESS (who can see whom)
+    where += `
     AND (
       u.role_id = ?
       OR u.role_id IN (
@@ -36,45 +36,45 @@ class UserRepository {
       )
     )
   `;
-  values.push(currentUser.roleId, currentUser.roleId);
+    values.push(currentUser.roleId, currentUser.roleId);
 
-  // ✅ SEARCH
-  if (search && search.trim() !== "") {
-    where += `
+    // ✅ SEARCH
+    if (search && search.trim() !== "") {
+      where += `
       AND (
         LOWER(u.name) LIKE ?
         OR LOWER(u.email) LIKE ?
         OR u.id = ?
       )
     `;
-    values.push(
-      `%${search.toLowerCase()}%`,
-      `%${search.toLowerCase()}%`,
-      isNaN(search) ? 0 : Number(search)
-    );
-  }
+      values.push(
+        `%${search.toLowerCase()}%`,
+        `%${search.toLowerCase()}%`,
+        isNaN(search) ? 0 : Number(search)
+      );
+    }
 
-  // ✅ ROLE FILTER (STRICT)
-  if (role && role.trim() !== "") {
-    where += ` AND r.name = ? `;
-    values.push(role);
-  }
+    // ✅ ROLE FILTER (STRICT)
+    if (role && role.trim() !== "") {
+      where += ` AND r.name = ? `;
+      values.push(role);
+    }
 
-  // ✅ COUNT
-  const countQuery = `
+    // ✅ COUNT
+    const countQuery = `
     SELECT COUNT(*) as total
     FROM users u
     JOIN roles r ON u.role_id = r.id
     ${where}
   `;
 
-  const [countResult] = await pool.execute(countQuery, values);
-  const total = countResult[0].total;
+    const [countResult] = await pool.execute(countQuery, values);
+    const total = countResult[0].total;
 
-  const offset = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-  // ✅ DATA QUERY
-  const dataQuery = `
+    // ✅ DATA QUERY
+    const dataQuery = `
     SELECT 
       u.id,
       u.name,
@@ -88,10 +88,10 @@ class UserRepository {
     LIMIT ? OFFSET ?
   `;
 
-  const [rows] = await pool.execute(dataQuery, [...values, limit, offset]);
+    const [rows] = await pool.execute(dataQuery, [...values, limit, offset]);
 
-  return rows;
-}
+    return rows;
+  }
 
   static async updateUser(id, data) {
 
@@ -163,6 +163,58 @@ class UserRepository {
     ]);
 
     return rows;
+  }
+
+  // static async getProfile(userId) {
+  //   const query = `
+  //   SELECT 
+  //     u.id,
+  //     u.name,
+  //     u.email,
+  //     u.status,
+  //     u.created_at,
+
+  //     r.name AS role,
+
+  //     e.employee_code,
+  //     e.designation,
+  //     e.phone,
+  //     e.address,
+  //     e.dob,
+  //     e.joining_date,
+  //     e.salary,
+
+  //     d.name AS department
+
+  //   FROM users u
+  //   LEFT JOIN roles r ON u.role_id = r.id
+  //   LEFT JOIN employees e ON e.user_id = u.id
+  //   LEFT JOIN departments d ON e.department_id = d.id
+
+  //   WHERE u.id = ? AND u.deleted_at IS NULL
+  // `;
+
+  //   const [rows] = await pool.execute(query, [userId]);
+
+  //   return rows[0];
+  // }
+
+  static async getProfile(userId) {
+    const query = `
+    SELECT 
+      u.id,
+      u.name,
+      u.email,
+      u.status,
+      r.name AS role,
+      u.created_at
+    FROM users u
+    LEFT JOIN roles r ON u.role_id = r.id
+    WHERE u.id = ? AND u.deleted_at IS NULL
+  `;
+
+    const [rows] = await pool.execute(query, [userId]);
+    return rows[0];
   }
 }
 

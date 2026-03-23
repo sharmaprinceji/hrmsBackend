@@ -110,12 +110,6 @@ static async getUsers(currentUser, filters) {
   }
 
   const data=await UserRepository.getUsersByRole(currentUser, filters);
-//   console.log("113====>",{
-//   data: data,
-//   total: data.length, // ✅ total based on array length
-//   page: page,
-//   totalPages: Math.ceil(data.length / limit)
-// });
 
   return {
   data: data,
@@ -123,6 +117,14 @@ static async getUsers(currentUser, filters) {
   page: page,
   totalPages: Math.ceil(data.length / limit)
 };
+}
+
+static async getProfile(userId) {
+  const user = await UserRepository.getProfile(userId);
+
+  if (!user) throw new Error("User not found");
+
+  return user;
 }
 
 }

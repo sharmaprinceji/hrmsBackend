@@ -74,6 +74,16 @@ static async getUsers(req, res, next) {
   }
 }
 
+static async getProfile(req, res, next) {
+  try {
+    const user = await UserService.getProfile(req.user.userId);
+
+    return successResponse(res, user, "Profile fetched");
+  } catch (err) {
+    next(err);
+  }
+}
+
 }
 
 export default UserController;

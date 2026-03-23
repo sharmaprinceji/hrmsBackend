@@ -96,4 +96,22 @@ userRouter.get(
   UserController.getUsers
 );
 
+/**
+ * @swagger
+ * /users/profile:
+ *   get:
+ *     summary: Get logged-in user profile
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile fetched successfully
+ */
+userRouter.get(
+  "/profile",
+  authMiddleware,
+  UserController.getProfile
+);
+
 export default userRouter;
