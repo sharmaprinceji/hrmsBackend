@@ -1,5 +1,23 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS holidays;
+DROP TABLE IF EXISTS payroll;
+DROP TABLE IF EXISTS leave_requests;
+DROP TABLE IF EXISTS leave_balances;
+DROP TABLE IF EXISTS leave_types;
+DROP TABLE IF EXISTS attendance;
+DROP TABLE IF EXISTS employee_documents;
+DROP TABLE IF EXISTS employees;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS role_permissions;
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS role_manage_rules;
+DROP TABLE IF EXISTS roles;
+
 -- =========================
 -- ROLES
 -- =========================
@@ -19,10 +37,10 @@ CREATE TABLE role_manage_rules (
  manager_role_id BIGINT NOT NULL,
  target_role_id BIGINT NOT NULL,
 
- FOREIGN KEY (manager_role_id) REFERENCES roles(id) ON DELETE CASCADE,
- FOREIGN KEY (target_role_id) REFERENCES roles(id) ON DELETE CASCADE,
+ UNIQUE(manager_role_id,target_role_id),
 
- UNIQUE(manager_role_id,target_role_id)
+ FOREIGN KEY (manager_role_id) REFERENCES roles(id) ON DELETE CASCADE,
+ FOREIGN KEY (target_role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
 -- =========================
@@ -32,11 +50,10 @@ CREATE TABLE permissions (
  id BIGINT PRIMARY KEY AUTO_INCREMENT,
  module VARCHAR(100) NOT NULL,
  action VARCHAR(50) NOT NULL,
- created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-CREATE INDEX idx_permission_module_action
-ON permissions(module,action);
+ INDEX idx_permission_module_action (module, action)
+);
 
 -- =========================
 -- ROLE PERMISSIONS
@@ -46,14 +63,12 @@ CREATE TABLE role_permissions (
  role_id BIGINT,
  permission_id BIGINT,
 
+ UNIQUE(role_id,permission_id),
+ INDEX idx_role_permissions_role (role_id),
+
  FOREIGN KEY(role_id) REFERENCES roles(id) ON DELETE CASCADE,
- FOREIGN KEY(permission_id) REFERENCES permissions(id) ON DELETE CASCADE,
-
- UNIQUE(role_id,permission_id)
+ FOREIGN KEY(permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_role_permissions_role
-ON role_permissions(role_id);
 
 -- =========================
 -- USERS
@@ -70,29 +85,27 @@ CREATE TABLE users (
  deleted_at TIMESTAMP NULL,
 
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
- ON UPDATE CURRENT_TIMESTAMP,
+ updated_at TIMESTAMP NULL,
+
+ INDEX idx_users_email (email),
 
  FOREIGN KEY(role_id) REFERENCES roles(id)
 );
-
-CREATE INDEX idx_users_email ON users(email);
 
 -- =========================
 -- REFRESH TOKENS
 -- =========================
 CREATE TABLE refresh_tokens (
-
  id BIGINT PRIMARY KEY AUTO_INCREMENT,
  user_id BIGINT NOT NULL,
  token TEXT NOT NULL,
  expires_at DATETIME NOT NULL,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+ INDEX idx_refresh_user (user_id),
+
  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_refresh_user ON refresh_tokens(user_id);
 
 -- =========================
 -- DEPARTMENTS
@@ -129,12 +142,11 @@ CREATE TABLE employees (
  deleted_at TIMESTAMP NULL,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+ INDEX idx_employee_department (department_id),
+
  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
  FOREIGN KEY(department_id) REFERENCES departments(id)
 );
-
-CREATE INDEX idx_employee_department
-ON employees(department_id);
 
 -- =========================
 -- EMPLOYEE DOCUMENTS
@@ -166,11 +178,10 @@ CREATE TABLE attendance (
 
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+ INDEX idx_attendance_employee_date (employee_id, attendance_date),
+
  FOREIGN KEY(employee_id) REFERENCES employees(id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_attendance_employee_date
-ON attendance(employee_id,attendance_date);
 
 -- =========================
 -- LEAVE TYPES
@@ -264,11 +275,10 @@ CREATE TABLE holidays (
  type ENUM('national','regional','company') DEFAULT 'company',
 
  deleted_at TIMESTAMP NULL,
- created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+ created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-CREATE INDEX idx_holiday_date
-ON holidays(holiday_date);
+ INDEX idx_holiday_date (holiday_date)
+);
 
 -- =========================
 -- TASKS
@@ -290,12 +300,11 @@ CREATE TABLE tasks (
  deleted_at TIMESTAMP NULL,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+ INDEX idx_tasks_assigned_to (assigned_to),
+
  FOREIGN KEY(assigned_by) REFERENCES users(id),
  FOREIGN KEY(assigned_to) REFERENCES users(id)
 );
-
-CREATE INDEX idx_tasks_assigned_to
-ON tasks(assigned_to);
 
 -- =========================
 -- AUDIT LOGS
@@ -309,16 +318,16 @@ CREATE TABLE audit_logs (
  entity_type VARCHAR(100),
  entity_id BIGINT,
 
- old_data JSON,
- new_data JSON,
+ old_data TEXT,
+ new_data TEXT,
 
  ip_address VARCHAR(50),
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+ INDEX idx_audit_user (user_id),
+ INDEX idx_audit_entity (entity_type, entity_id),
+
  FOREIGN KEY(user_id) REFERENCES users(id)
 );
-
-CREATE INDEX idx_audit_user ON audit_logs(user_id);
-CREATE INDEX idx_audit_entity ON audit_logs(entity_type,entity_id);
 
 SET FOREIGN_KEY_CHECKS = 1;
